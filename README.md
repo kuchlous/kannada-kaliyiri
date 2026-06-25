@@ -13,7 +13,7 @@ A single-file web app for learning Kannada through AI-generated daily lessons. E
 
 ## Getting started
 
-1. Open `kannada_learning_app.html` in any modern browser — no build step or server required.
+1. Open `index.html` in any modern browser — no build step or server required.
 2. On first launch, paste your [Anthropic API key](https://console.anthropic.com/) into the setup screen. It is stored only in your browser's `localStorage` and sent directly to the Anthropic API.
 3. Start your first lesson.
 
