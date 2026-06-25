@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ಕನ್ನಡ ಕಲಿಯಿರಿ · Kannada Kaliyiri</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#FDF6EC; --warm-white:#FEF9F3;
+  --saffron:#E8873A; --saffron-light:#F5A55A; --saffron-dark:#C96A20;
+  --terracotta:#C1513A; --terracotta-light:#D97055;
+  --mud:#7A4B2E; --mud-light:#9B6845;
+  --sand:#E8D5B0; --sand-dark:#C9B48A;
+  --leaf:#6B8E4E;
+  --text-dark:#3D2410; --text-mid:#6B4226; --text-light:#9B6845;
+  --card-bg:rgba(253,246,236,0.97);
+  --shadow:0 8px 32px rgba(122,75,46,0.14);
+  --shadow-hover:0 16px 48px rgba(122,75,46,0.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Lato',sans-serif;background:var(--cream);color:var(--text-dark);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 18% 8%,rgba(232,135,58,.16) 0%,transparent 50%),radial-gradient(ellipse at 82% 92%,rgba(193,81,58,.13) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.app-wrapper{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:20px 16px 80px;}
+
+/* ── HEADER ── */
+header{text-align:center;padding:28px 20px 18px;}
+.header-ornament{font-size:20px;letter-spacing:10px;color:var(--saffron);margin-bottom:6px;opacity:.65;}
+header h1{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,5vw,2.6rem);color:var(--mud);line-height:1.1;margin-bottom:3px;}
+header h1 span{display:block;font-style:italic;color:var(--terracotta);}
+header p{color:var(--text-light);font-size:.85rem;letter-spacing:1.5px;text-transform:uppercase;font-weight:300;}
+.level-badge{display:inline-block;margin-top:9px;background:var(--saffron);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 13px;border-radius:20px;}
+
+/* ── STATS ── */
+.stats-row{display:flex;gap:8px;justify-content:center;margin:14px 0;flex-wrap:wrap;}
+.stat-chip{background:var(--card-bg);border:1px solid rgba(201,180,138,.45);border-radius:28px;padding:6px 13px;display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:700;color:var(--text-mid);}
+.stat-chip .val{color:var(--saffron-dark);font-size:1rem;}
+
+/* ── NAV TABS ── */
+.nav-tabs{display:flex;gap:5px;justify-content:center;margin:14px 0 18px;flex-wrap:wrap;}
+.nav-tab{padding:8px 16px;border-radius:28px;border:2px solid var(--sand-dark);background:transparent;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .22s;}
+.nav-tab:hover{border-color:var(--saffron);color:var(--saffron);}
+.nav-tab.active{background:var(--saffron);border-color:var(--saffron);color:#fff;box-shadow:0 4px 14px rgba(232,135,58,.32);}
+
+/* ── PANELS ── */
+.panel{display:none;animation:fadeUp .38s ease;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── API KEY GATE (separate first page) ── */
+.api-gate{position:fixed;inset:0;z-index:50;background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 18px;overflow-y:auto;}
+.api-gate::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 18% 8%,rgba(232,135,58,.16) 0%,transparent 50%),radial-gradient(ellipse at 82% 92%,rgba(193,81,58,.13) 0%,transparent 50%);pointer-events:none;z-index:-1;}
+.api-gate-inner{width:100%;max-width:440px;text-align:center;}
+.api-gate .gate-ornament{font-size:20px;letter-spacing:10px;color:var(--saffron);margin-bottom:8px;opacity:.65;}
+.api-gate h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,6vw,2.7rem);color:var(--mud);line-height:1.1;margin-bottom:4px;}
+.api-gate h1 span{display:block;font-style:italic;color:var(--terracotta);}
+.api-gate .gate-subtitle{color:var(--text-light);font-size:.85rem;letter-spacing:1.5px;text-transform:uppercase;font-weight:300;margin-bottom:26px;}
+
+/* ── API KEY ── */
+.api-box{background:linear-gradient(135deg,rgba(232,135,58,.08),rgba(193,81,58,.05));border:2px dashed var(--saffron-light);border-radius:16px;padding:22px;margin-bottom:18px;text-align:center;}
+.api-box h3{font-family:'Playfair Display',serif;color:var(--mud);margin-bottom:7px;}
+.api-box p{color:var(--text-light);font-size:.83rem;margin-bottom:13px;}
+.api-input{width:100%;padding:10px 14px;border:2px solid var(--sand-dark);border-radius:11px;font-family:'Lato',sans-serif;font-size:.87rem;color:var(--text-dark);background:var(--cream);outline:none;transition:border-color .2s;margin-bottom:10px;}
+.api-input:focus{border-color:var(--saffron);}
+
+/* ── STEP INDICATOR ── */
+.step-indicator{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:22px;}
+.step-dot{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
+.step-dot .dot{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--sand-dark);background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .25s;color:var(--text-light);}
+.step-dot.done .dot{background:var(--leaf);border-color:var(--leaf);color:#fff;}
+.step-dot.active .dot{background:var(--saffron);border-color:var(--saffron);color:#fff;box-shadow:0 0 0 4px rgba(232,135,58,.2);}
+.step-dot .step-label{font-size:.62rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-light);text-align:center;}
+.step-dot.done .step-label{color:var(--leaf);}
+.step-dot.active .step-label{color:var(--saffron-dark);}
+.step-line{width:48px;height:2px;background:var(--sand-dark);margin-bottom:18px;transition:background .3s;}
+.step-line.done{background:var(--leaf);}
+
+/* ── STEP CARD ── */
+.step-card{background:var(--card-bg);border-radius:22px;padding:30px;box-shadow:var(--shadow);border:1px solid rgba(201,180,138,.38);position:relative;}
+.step-card-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.step-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.step-icon.s{background:rgba(232,135,58,.13);}
+.step-icon.t{background:rgba(193,81,58,.1);}
+.step-icon.r{background:rgba(107,142,78,.11);}
+.step-meta{display:flex;flex-direction:column;}
+.step-tag{font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);}
+.step-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--text-dark);margin-top:2px;}
+
+/* ── WORD DISPLAY ── */
+.word-big{font-size:clamp(3rem,9vw,5rem);font-weight:700;color:var(--terracotta);line-height:1;margin-bottom:6px;}
+.word-roman{font-family:'Playfair Display',serif;font-style:italic;font-size:1.4rem;color:var(--mud-light);margin-bottom:4px;}
+.word-eng{font-size:1.05rem;color:var(--text-mid);}
+.word-eng strong{color:var(--saffron-dark);font-weight:700;}
+.tip-box{background:rgba(107,142,78,.07);border:1px solid rgba(107,142,78,.18);border-radius:11px;padding:10px 14px;font-size:.82rem;color:var(--leaf);margin-top:12px;}
+.tip-box strong{color:var(--mud);}
+
+/* ── SENTENCE ── */
+.sent-block{background:rgba(232,213,176,.28);border-left:4px solid var(--saffron);border-radius:0 12px 12px 0;padding:14px 18px;margin:10px 0;}
+.sent-kn{font-size:1.3rem;color:var(--terracotta-light);font-weight:600;margin-bottom:4px;}
+.sent-roman{font-style:italic;color:var(--mud-light);font-size:.88rem;margin-bottom:3px;}
+.sent-eng{color:var(--text-mid);font-size:.85rem;}
+
+/* ── ROLEPLAY ── */
+.rp-scene{font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-light);margin-bottom:14px;}
+.chat-bubble{display:flex;gap:11px;margin-bottom:13px;align-items:flex-start;}
+.chat-bubble.you{flex-direction:row-reverse;}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.avatar.npc{background:linear-gradient(135deg,var(--saffron),var(--terracotta));}
+.avatar.you{background:linear-gradient(135deg,var(--leaf),var(--mud));}
+.bubble-inner{max-width:78%;}
+.bubble-name{font-size:.63rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:3px;}
+.chat-bubble.you .bubble-name{text-align:right;}
+.bubble-text{padding:10px 14px;border-radius:14px;font-size:.9rem;}
+.bubble-text.npc{background:rgba(232,135,58,.09);border:1px solid rgba(232,135,58,.2);border-radius:3px 14px 14px 14px;}
+.bubble-text.you{background:rgba(107,142,78,.09);border:1px solid rgba(107,142,78,.2);border-radius:14px 3px 14px 14px;}
+.bubble-kn{font-size:1.05rem;color:var(--terracotta);font-weight:600;}
+.bubble-roman{font-style:italic;color:var(--mud-light);font-size:.76rem;margin-top:2px;}
+.bubble-eng{color:var(--text-mid);font-size:.77rem;margin-top:1px;}
+
+/* ── NAVIGATION ── */
+.card-nav{display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:10px;}
+.nav-arrow{background:transparent;border:2px solid var(--sand-dark);color:var(--text-mid);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.nav-arrow:hover:not(:disabled){border-color:var(--saffron);color:var(--saffron);}
+.nav-arrow:disabled{opacity:.3;cursor:default;}
+.complete-btn{flex:1;padding:12px 20px;border-radius:28px;border:none;font-family:'Lato',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.complete-btn.todo{background:var(--saffron);color:#fff;box-shadow:0 4px 16px rgba(232,135,58,.35);}
+.complete-btn.todo:hover{background:var(--saffron-dark);transform:translateY(-2px);}
+.complete-btn.done{background:rgba(107,142,78,.12);color:var(--leaf);border:2px solid var(--leaf);}
+.complete-btn.done:hover{background:rgba(107,142,78,.2);}
+
+/* ── RECORD BUTTON ── */
+.rec-btn{background:#7B2D8B;color:#fff;padding:10px 18px;border-radius:28px;border:none;font-family:'Lato',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .22s;}
+.rec-btn:hover{background:#6a2578;}
+.rec-btn.recording{background:#c0392b;animation:recpulse 1s infinite;}
+@keyframes recpulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.45);}50%{box-shadow:0 0 0 8px rgba(192,57,43,0);}}
+.rec-panel{background:rgba(123,45,139,.05);border:1px solid rgba(123,45,139,.18);border-radius:12px;padding:12px;margin-top:12px;}
+.rec-panel h4{font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#7B2D8B;margin-bottom:8px;}
+.rec-wave{height:34px;background:rgba(123,45,139,.06);border-radius:7px;margin:6px 0;display:flex;align-items:center;justify-content:center;gap:3px;overflow:hidden;}
+.rec-bar{width:4px;border-radius:2px;background:#7B2D8B;opacity:.6;}
+audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--saffron);}
+
+/* ── SPEAK BTN ── */
+.speak-btn{background:var(--terracotta);color:#fff;padding:9px 16px;border-radius:28px;border:none;font-family:'Lato',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .22s;}
+.speak-btn:hover{background:#a84330;}
+.speak-btn.speaking{background:var(--mud);animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+
+/* ── PRACTICE MODE ── */
+.practice-intro{background:linear-gradient(135deg,rgba(107,142,78,.07),rgba(232,135,58,.04));border:1px solid rgba(107,142,78,.18);border-radius:15px;padding:18px;margin-top:18px;}
+.practice-intro h4{font-family:'Playfair Display',serif;color:var(--mud);font-size:1.05rem;margin-bottom:5px;}
+.practice-intro p{color:var(--text-light);font-size:.82rem;margin-bottom:12px;}
+.role-choice{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px;}
+.role-btn{padding:11px 16px;border-radius:12px;border:2px solid var(--sand-dark);background:#fff;cursor:pointer;font-family:'Lato',sans-serif;font-size:.82rem;font-weight:700;color:var(--text-mid);transition:all .2s;text-align:left;}
+.role-btn:hover,.role-btn.selected{border-color:var(--leaf);background:rgba(107,142,78,.07);color:var(--leaf);}
+.role-icon{font-size:1.3rem;display:block;margin-bottom:3px;}
+.prac-chat{margin-top:12px;display:flex;flex-direction:column;gap:10px;}
+.prac-turn{border-radius:14px;padding:12px 14px;}
+.prac-turn.ai-turn{background:rgba(232,135,58,.08);border:1px solid rgba(232,135,58,.18);}
+.prac-turn.your-turn{background:rgba(107,142,78,.06);border:2px dashed rgba(107,142,78,.3);}
+.prac-turn.your-turn.active{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(107,142,78,.1);}
+.turn-lbl{font-size:.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.turn-lbl.ai{color:var(--saffron-dark);}
+.turn-lbl.you{color:var(--leaf);}
+.cue-eng{font-size:.82rem;color:var(--text-light);font-style:italic;background:rgba(232,213,176,.35);padding:5px 9px;border-radius:7px;margin-bottom:9px;}
+.hint-btn{font-size:.72rem;color:var(--text-light);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Lato',sans-serif;margin-top:7px;display:block;}
+.hint-box{background:rgba(232,213,176,.38);border-radius:7px;padding:7px 11px;margin-top:5px;font-size:.79rem;color:var(--mud-light);display:none;}
+.hint-box.show{display:block;}
+.prac-done{text-align:center;padding:22px;background:linear-gradient(135deg,rgba(107,142,78,.07),rgba(232,135,58,.05));border-radius:14px;border:1px solid rgba(107,142,78,.18);}
+
+/* ── REVISION ── */
+.rev-mode-btns{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
+.rev-mode-btn{padding:11px 28px;border-radius:28px;border:2px solid var(--sand-dark);background:transparent;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .22s;}
+.rev-mode-btn:hover{border-color:var(--saffron);color:var(--saffron);}
+.rev-mode-btn.active{background:var(--saffron);border-color:var(--saffron);color:#fff;box-shadow:0 4px 14px rgba(232,135,58,.3);}
+
+/* Flashcard */
+.flashcard{background:linear-gradient(135deg,rgba(232,135,58,.05),rgba(193,81,58,.04));border:2px solid var(--saffron-light);border-radius:22px;padding:30px;text-align:center;margin-bottom:16px;}
+.fc-counter{font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:12px;}
+.fc-type{font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.fc-type.word{color:var(--saffron-dark);}
+.fc-type.sentence{color:var(--terracotta);}
+.fc-front{font-size:2.4rem;color:var(--terracotta);font-weight:700;margin-bottom:6px;line-height:1.1;}
+.fc-front.sentence{font-size:1.4rem;}
+.fc-roman{font-style:italic;color:var(--mud-light);font-size:1rem;margin-bottom:16px;}
+.fc-answer{background:var(--cream);border:1px solid var(--sand-dark);border-radius:12px;padding:15px;margin-top:14px;display:none;}
+.fc-answer.show{display:block;animation:fadeUp .25s ease;}
+.fc-meaning{font-size:1.25rem;font-weight:700;color:var(--saffron-dark);margin-bottom:4px;}
+.fc-extra{color:var(--text-light);font-size:.83rem;margin-bottom:14px;}
+.fc-rate{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+.rate-btn{padding:8px 20px;border-radius:20px;border:none;font-family:'Lato',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.rate-btn.easy{background:rgba(107,142,78,.15);color:var(--leaf);}
+.rate-btn.easy:hover{background:var(--leaf);color:#fff;}
+.rate-btn.hard{background:rgba(193,81,58,.12);color:var(--terracotta);}
+.rate-btn.hard:hover{background:var(--terracotta);color:#fff;}
+
+/* Quiz */
+.quiz-card{background:var(--card-bg);border-radius:20px;padding:26px;box-shadow:var(--shadow);border:1px solid rgba(201,180,138,.35);margin-bottom:16px;}
+.quiz-q{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--mud);margin-bottom:6px;}
+.quiz-kn{font-size:1.8rem;color:var(--terracotta);font-weight:700;margin-bottom:4px;}
+.quiz-sub{font-style:italic;color:var(--mud-light);font-size:.88rem;margin-bottom:18px;}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.quiz-opt{padding:12px 14px;border-radius:12px;border:2px solid var(--sand-dark);background:#fff;cursor:pointer;font-family:'Lato',sans-serif;font-size:.88rem;color:var(--text-mid);transition:all .2s;text-align:left;font-weight:600;line-height:1.3;}
+.quiz-opt:hover:not(:disabled){border-color:var(--saffron);color:var(--saffron);}
+.quiz-opt.correct{background:rgba(107,142,78,.12);border-color:var(--leaf);color:var(--leaf);}
+.quiz-opt.wrong{background:rgba(193,81,58,.1);border-color:var(--terracotta);color:var(--terracotta);}
+.quiz-opt:disabled{cursor:default;}
+.quiz-result{margin-top:12px;padding:10px 14px;border-radius:10px;font-size:.85rem;font-weight:700;display:none;}
+.quiz-result.show{display:block;}
+.quiz-result.correct{background:rgba(107,142,78,.1);color:var(--leaf);}
+.quiz-result.wrong{background:rgba(193,81,58,.08);color:var(--terracotta);}
+.quiz-score{text-align:center;padding:22px;background:linear-gradient(135deg,rgba(232,135,58,.06),rgba(193,81,58,.04));border-radius:18px;border:2px solid var(--saffron-light);}
+
+/* ARCHIVE */
+.archive-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+@media(max-width:560px){.archive-grid{grid-template-columns:1fr;}}
+.archive-card{background:rgba(232,213,176,.22);border:1px solid rgba(201,180,138,.45);border-radius:13px;padding:13px;cursor:pointer;transition:all .18s;}
+.archive-card:hover{background:rgba(232,135,58,.07);border-color:var(--saffron);transform:translateY(-2px);}
+.arc-date{font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:4px;}
+.arc-word{font-size:1.35rem;color:var(--terracotta);font-weight:700;}
+.arc-meaning{font-size:.78rem;color:var(--text-mid);margin-top:2px;}
+.week-hdr{font-family:'Playfair Display',serif;font-size:1rem;color:var(--mud);margin:18px 0 9px;padding-bottom:5px;border-bottom:2px solid var(--sand-dark);}
+.topic-tag{display:inline-block;padding:2px 9px;border-radius:18px;font-size:.67rem;font-weight:700;text-transform:uppercase;margin-top:6px;}
+.tag-daily{background:rgba(232,135,58,.14);color:var(--saffron-dark);}
+.tag-travel{background:rgba(107,142,78,.13);color:var(--leaf);}
+.tag-work{background:rgba(122,75,46,.1);color:var(--mud);}
+.tag-family{background:rgba(193,81,58,.1);color:var(--terracotta);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(61,36,16,.58);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--warm-white);border-radius:22px;padding:26px;max-width:540px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 28px 60px rgba(61,36,16,.28);animation:fadeUp .28s ease;}
+.modal-close{float:right;background:var(--sand);border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.85rem;color:var(--text-mid);display:inline-flex;align-items:center;justify-content:center;}
+
+/* UTILS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:28px;border:none;font-family:'Lato',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;transition:all .22s;}
+.btn-primary{background:var(--saffron);color:#fff;box-shadow:0 4px 13px rgba(232,135,58,.32);}
+.btn-primary:hover{background:var(--saffron-dark);transform:translateY(-2px);}
+.btn-secondary{background:transparent;border:2px solid var(--sand-dark);color:var(--text-mid);}
+.btn-secondary:hover{border-color:var(--saffron);color:var(--saffron);}
+.btn-leaf{background:var(--leaf);color:#fff;box-shadow:0 4px 13px rgba(107,142,78,.28);}
+.btn-leaf:hover{background:#5a7a3e;transform:translateY(-2px);}
+/* Welcome button: keep the hover cue but don't move the element — the translateY
+   lift moved its hit area out from under the cursor, causing a hover flicker. */
+#welcome-start-btn:hover{transform:none;box-shadow:0 6px 18px rgba(232,135,58,.45);}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--sand-dark),transparent);margin:16px 0;}
+.loading-state{text-align:center;padding:38px 20px;color:var(--text-light);}
+.loading-dots{display:inline-flex;gap:5px;margin-top:10px;}
+.loading-dots span{width:7px;height:7px;border-radius:50%;background:var(--saffron);animation:bounce 1.2s infinite;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,80%,100%{transform:scale(.7);opacity:.5;}40%{transform:scale(1);opacity:1;}}
+.error-state{background:rgba(193,81,58,.07);border:1px solid rgba(193,81,58,.28);border-radius:11px;padding:13px 16px;color:var(--terracotta);font-size:.86rem;margin:10px 0;}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(110px);background:var(--mud);color:var(--cream);padding:10px 20px;border-radius:28px;font-size:.83rem;font-weight:700;box-shadow:0 8px 28px rgba(0,0,0,.18);transition:transform .38s cubic-bezier(.34,1.56,.64,1);z-index:1000;max-width:86vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── THEME PICKER ── */
+.theme-bar{background:var(--card-bg);border:1px solid rgba(201,180,138,.4);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(122,75,46,.08);}
+.theme-bar label{font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);white-space:nowrap;}
+.theme-select{flex:1;min-width:180px;padding:8px 12px;border:2px solid var(--sand-dark);border-radius:10px;font-family:'Lato',sans-serif;font-size:.85rem;color:var(--text-dark);background:var(--cream);outline:none;cursor:pointer;transition:border-color .2s;}
+.theme-select:focus{border-color:var(--saffron);}
+.load-btn{padding:9px 18px;border-radius:28px;border:none;background:var(--saffron);color:#fff;font-family:'Lato',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .22s;box-shadow:0 3px 12px rgba(232,135,58,.3);}
+.load-btn:hover{background:var(--saffron-dark);transform:translateY(-1px);}
+
+/* ── ASK PANEL ── */
+.ask-panel{background:var(--card-bg);border:1px solid rgba(201,180,138,.4);border-radius:18px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 12px rgba(122,75,46,.08);}
+.ask-toggle{width:100%;padding:14px 18px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:'Lato',sans-serif;font-size:.9rem;font-weight:700;color:var(--mud);text-align:left;}
+.ask-toggle:hover{background:rgba(232,135,58,.04);}
+.ask-toggle .chevron{font-size:.7rem;transition:transform .25s;color:var(--text-light);}
+.ask-toggle.open .chevron{transform:rotate(180deg);}
+.ask-body{display:none;padding:0 18px 16px;border-top:1px solid rgba(201,180,138,.25);}
+.ask-body.open{display:block;animation:fadeUp .25s ease;}
+.ask-examples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-top:12px;}
+.ask-chip{padding:5px 11px;background:rgba(232,135,58,.09);border:1px solid rgba(232,135,58,.22);border-radius:20px;font-size:.75rem;color:var(--saffron-dark);cursor:pointer;transition:all .18s;font-family:'Lato',sans-serif;}
+.ask-chip:hover{background:rgba(232,135,58,.18);}
+.ask-input-row{display:flex;gap:8px;}
+.ask-input{flex:1;padding:10px 14px;border:2px solid var(--sand-dark);border-radius:11px;font-family:'Lato',sans-serif;font-size:.88rem;color:var(--text-dark);background:var(--cream);outline:none;transition:border-color .2s;}
+.ask-input:focus{border-color:var(--saffron);}
+.ask-submit{padding:10px 18px;border-radius:28px;border:none;background:var(--mud);color:#fff;font-family:'Lato',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .22s;}
+.ask-submit:hover{background:var(--text-dark);}
+.ask-submit:disabled{opacity:.5;cursor:default;}
+.ask-answer{margin-top:14px;background:rgba(232,213,176,.25);border-left:4px solid var(--saffron);border-radius:0 12px 12px 0;padding:13px 16px;}
+.ask-answer-head{font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--saffron-dark);margin-bottom:8px;}
+.ask-answer-body{font-size:.9rem;color:var(--text-dark);line-height:1.6;}
+.ask-answer-body .kn{font-size:1.2rem;color:var(--terracotta);font-weight:700;}
+.ask-answer-body .rom{font-style:italic;color:var(--mud-light);font-size:.85rem;}
+.ask-loading{display:flex;align-items:center;gap:8px;color:var(--text-light);font-size:.85rem;padding:10px 0;}
+
+
+/* ── FOCUS MODE ── */
+.chrome-ui { transition: opacity .25s ease; }
+.chrome-ui.hidden { display: none !important; }
+
+/* Fixed menu button — floats top-left during focus/lesson mode */
+#focus-menu-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 900;
+  background: var(--card-bg);
+  border: 1.5px solid var(--sand-dark);
+  border-radius: 22px;
+  padding: 7px 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text-mid);
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(122,75,46,.14);
+  transition: all .2s;
+}
+#focus-menu-btn:hover { border-color: var(--saffron); color: var(--saffron); }
+#focus-menu-btn.visible { display: block; animation: fadeUp .25s ease; }
+
+
+</style>
+</head>
+
+<body>
+<!-- ══ API KEY GATE — first page, shown when no key is saved ══ -->
+<div class="api-gate" id="api-gate" style="display:none;">
+  <div class="api-gate-inner">
+    <div class="gate-ornament">✦ ✦ ✦</div>
+    <h1><span>ಕನ್ನಡ ಕಲಿಯಿರಿ</span>Kannada Kaliyiri</h1>
+    <p class="gate-subtitle">Your Daily Kannada Journey</p>
+    <div class="api-box">
+      <h3>🔑 Your Anthropic API Key</h3>
+      <p>Stored only in your browser — never sent anywhere else.</p>
+      <input type="password" class="api-input" id="api-key-input" placeholder="sk-ant-api03-..." onkeydown="if(event.key==='Enter') saveApiKey()">
+      <button class="btn btn-primary" onclick="saveApiKey()">✓ Save & Start Learning</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fixed floating menu button — visible during lesson focus mode -->
+<button id="focus-menu-btn" onclick="goToMainMenu()">← Menu</button>
+
+<div class="app-wrapper">
+
+<header>
+  <div class="header-ornament chrome-ui" id="chrome-ornament">✦ ✦ ✦</div>
+  <h1 class="chrome-ui" id="chrome-h1"><span>ಕನ್ನಡ ಕಲಿಯಿರಿ</span>Kannada Kaliyiri</h1>
+  <p class="chrome-ui" id="chrome-subtitle">Your Daily Kannada Journey</p>
+  <!-- Ask dropdown in header -->
+  <div class="chrome-ui" id="chrome-ask-wrap" style="max-width:500px;margin:0 auto;">
+  <div class="ask-panel">
+    <button class="ask-toggle" id="ask-toggle-btn" onclick="toggleAskPanel()">
+      <span>💬 Ask</span>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="ask-body" id="ask-body">
+      <div class="ask-input-row">
+        <input type="text" class="ask-input" id="ask-input" placeholder="e.g. How do I say I am hungry?" onkeydown="if(event.key==='Enter') submitAsk()">
+        <button class="ask-submit" id="ask-submit-btn" onclick="submitAsk()">Ask →</button>
+      </div>
+      <div id="ask-answer-area"></div>
+    </div>
+  </div>
+  </div><!-- /chrome-ask-wrap -->
+  <span class="level-badge chrome-ui" id="chrome-badge">🌱 Beginner · Day <span id="day-count">1</span></span>
+</header>
+
+<div class="stats-row chrome-ui" id="chrome-stats">
+  <div class="stat-chip">🔥 Streak <span class="val" id="streak-val">0</span>d</div>
+  <div class="stat-chip" onclick="showWordsList()" style="cursor:pointer" title="View all practiced words">📚 Words <span class="val" id="words-val">0</span></div>
+  <div class="stat-chip">🎯 Level <span class="val" id="level-val">1</span></div>
+</div>
+
+<div class="chrome-ui" id="chrome-reset" style="text-align:right;margin:-10px 0 6px;"><button onclick="resetApp()" style="background:none;border:none;cursor:pointer;font-size:.7rem;color:var(--text-light);font-family:Lato,sans-serif;">🗑 Reset app data</button></div>
+<!-- Lesson complete card — shown on main menu after all 3 steps done -->
+<div id="lesson-complete-card" style="display:none;animation:fadeUp .4s ease;">
+  <div style="background:linear-gradient(135deg,rgba(107,142,78,.1),rgba(232,135,58,.07));border:2px solid rgba(107,142,78,.3);border-radius:20px;padding:28px;text-align:center;">
+    <div style="text-align:left;margin-bottom:16px;">
+      <button onclick="goToMainMenu();" style="background:none;border:1px solid var(--sand-dark);border-radius:20px;padding:5px 14px;font-family:'Lato',sans-serif;font-size:.75rem;font-weight:700;color:var(--text-light);cursor:pointer;">← Menu</button>
+    </div>
+    <div style="font-size:3rem;margin-bottom:10px">🎊</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--mud);margin-bottom:6px">ಶಾಭಾಸ್!</div>
+    <div style="font-size:1rem;color:var(--text-mid);margin-bottom:4px">Today's lesson complete</div>
+    <div style="font-size:.82rem;color:var(--text-light);margin-bottom:24px">Saved to your archive &amp; revision deck</div>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+      <button class="btn btn-primary" style="font-size:.95rem;padding:12px 28px;width:100%;max-width:280px;" onclick="loadNewDay()">🌅 Start Tomorrow's Lesson</button>
+      <button class="btn btn-secondary" style="font-size:.9rem;padding:11px 28px;width:100%;max-width:280px;" onclick="repeatTodayLesson()">🔁 Repeat Today's Lesson</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav-tabs chrome-ui" id="chrome-nav">
+  <button class="nav-tab active" onclick="switchTab('today',this)">📅 Today</button>
+  <button class="nav-tab" onclick="switchTab('revision',this)">🔄 Revise</button>
+  <button class="nav-tab" onclick="switchTab('archive',this)">🗂 Archive</button>
+</div>
+
+<!-- ══ TODAY PANEL ══ -->
+<div class="panel active" id="panel-today">
+
+  <!-- Theme picker bar -->
+  <div class="theme-bar chrome-ui" id="chrome-theme">
+    <label>📚 Topic</label>
+    <select class="theme-select" id="theme-select">
+      <option value="random">🎲 Random word</option>
+      <option value="daily life &amp; food">🍱 Daily life &amp; food</option>
+      <option value="travel &amp; directions">🗺 Travel &amp; directions</option>
+      <option value="work &amp; professional">💼 Work &amp; professional</option>
+      <option value="family &amp; relationships">👨‍👩‍👧 Family &amp; relationships</option>
+      <option value="numbers &amp; time">🔢 Numbers &amp; time</option>
+      <option value="colours &amp; descriptions">🎨 Colours &amp; descriptions</option>
+      <option value="shopping &amp; money">🛒 Shopping &amp; money</option>
+      <option value="health &amp; body">🏥 Health &amp; body</option>
+      <option value="nature &amp; weather">🌿 Nature &amp; weather</option>
+    </select>
+    <button class="load-btn" onclick="loadWithTheme()">▶ Load Lesson</button>
+  </div>
+
+  <!-- Welcome card — shown on main menu before any lesson is started -->
+  <div id="welcome-card" style="display:none;text-align:center;padding:32px 20px;">
+    <div style="font-size:2.8rem;margin-bottom:12px">🌿</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--mud);margin-bottom:6px">Welcome back!</div>
+    <div style="font-size:.9rem;color:var(--text-light);margin-bottom:24px">Pick a topic above or start with a random word</div>
+    <button class="btn btn-primary" id="welcome-start-btn" style="font-size:1rem;padding:13px 32px;" onclick="loadWithTheme()">▶ Start Today's Lesson</button>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="step-indicator" id="step-indicator">
+    <div class="step-dot active" id="sdot-0" onclick="goStep(0)">
+      <div class="dot">🌟</div>
+      <div class="step-label">Word</div>
+    </div>
+    <div class="step-line" id="sline-0"></div>
+    <div class="step-dot" id="sdot-1" onclick="goStep(1)">
+      <div class="dot">💬</div>
+      <div class="step-label">Sentence</div>
+    </div>
+    <div class="step-line" id="sline-1"></div>
+    <div class="step-dot" id="sdot-2" onclick="goStep(2)">
+      <div class="dot">🎭</div>
+      <div class="step-label">Role Play</div>
+    </div>
+  </div>
+
+  <!-- Step 0: Word -->
+  <div id="step-0" class="step-card">
+    <div class="step-card-header">
+      <div class="step-icon s">🌟</div>
+      <div class="step-meta">
+        <div class="step-tag">Word of the Day</div>
+        <div class="step-title" id="word-topic">Loading…</div>
+      </div>
+    </div>
+    <div id="word-body">
+      <div class="loading-state">Generating your word…<div class="loading-dots"><span></span><span></span><span></span></div></div>
+    </div>
+    <div id="word-controls" style="display:none">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+        <button class="speak-btn" onclick="speak('word',this)">🔊 Hear Word</button>
+        <button class="rec-btn" id="rec-word" onclick="toggleRec('word')">🎙 Record Me</button>
+      </div>
+      <div id="rec-panel-word"></div>
+      <div class="card-nav">
+        <button class="nav-arrow" disabled>←</button>
+        <button class="complete-btn todo" id="cbtn-word" onclick="completeStep('word',0)">
+          ✓ Mark Complete & Continue →
+        </button>
+        <button class="nav-arrow" onclick="goStep(1)">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1: Sentence -->
+  <div id="step-1" class="step-card" style="display:none">
+    <div class="step-card-header">
+      <div class="step-icon t">💬</div>
+      <div class="step-meta">
+        <div class="step-tag">Sentence of the Day</div>
+        <div class="step-title">Using today's word in context</div>
+      </div>
+    </div>
+    <div id="sentence-body">
+      <div class="loading-state">Crafting your sentence…<div class="loading-dots"><span></span><span></span><span></span></div></div>
+    </div>
+    <div id="sentence-controls" style="display:none">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+        <button class="speak-btn" onclick="speak('sentence',this)">🔊 Hear Sentence</button>
+        <button class="rec-btn" id="rec-sentence" onclick="toggleRec('sentence')">🎙 Record Me</button>
+      </div>
+      <div id="rec-panel-sentence"></div>
+      <div class="card-nav">
+        <button class="nav-arrow" onclick="goStep(0)">←</button>
+        <button class="complete-btn todo" id="cbtn-sentence" onclick="completeStep('sentence',1)">
+          ✓ Mark Complete & Continue →
+        </button>
+        <button class="nav-arrow" onclick="goStep(2)">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Roleplay -->
+  <div id="step-2" class="step-card" style="display:none">
+    <div class="step-card-header">
+      <div class="step-icon r">🎭</div>
+      <div class="step-meta">
+        <div class="step-tag">Role Play Conversation</div>
+        <div class="step-title" id="rp-scenario-title">Real-life scenario</div>
+      </div>
+    </div>
+    <div id="roleplay-body">
+      <div class="loading-state">Setting the scene…<div class="loading-dots"><span></span><span></span><span></span></div></div>
+    </div>
+    <div id="roleplay-controls" style="display:none">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+        <button class="speak-btn" onclick="speak('roleplay',this)">🔊 Hear Conversation</button>
+        <button class="rec-btn" id="rec-roleplay" onclick="toggleRec('roleplay')">🎙 Record Me</button>
+        <button class="btn btn-leaf" onclick="openPractice()">🎮 Practice with AI</button>
+      </div>
+      <div id="rec-panel-roleplay"></div>
+      <div id="practice-area"></div>
+      <div class="card-nav">
+        <button class="nav-arrow" onclick="goStep(1)">←</button>
+        <button class="complete-btn todo" id="cbtn-roleplay" onclick="completeStep('roleplay',2)">
+          ✓ Mark Complete — Lesson Done! 🎉
+        </button>
+        <button class="nav-arrow" disabled>→</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /panel-today -->
+
+<!-- ══ REVISION PANEL ══ -->
+<div class="panel" id="panel-revision">
+  <div style="margin-bottom:14px;">
+    <button onclick="goToMenuFromRevision()" style="background:none;border:1px solid var(--sand-dark);border-radius:20px;padding:6px 15px;font-family:'Lato',sans-serif;font-size:.78rem;font-weight:700;color:var(--text-mid);cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--saffron)';this.style.color='var(--saffron)'" onmouseout="this.style.borderColor='var(--sand-dark)';this.style.color='var(--text-mid)'">← Menu</button>
+  </div>
+  <div style="background:var(--card-bg);border-radius:20px;padding:22px;margin-bottom:18px;box-shadow:var(--shadow);border:1px solid rgba(201,180,138,.35);">
+    <div style="font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:6px;">Revision</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--text-dark);margin-bottom:14px;">Choose your practice mode</div>
+    <div class="rev-mode-btns">
+      <button class="rev-mode-btn active" id="rbtn-flash" onclick="setRevMode('flashcard',this)">🃏 Flashcards</button>
+      <button class="rev-mode-btn" id="rbtn-quiz" onclick="setRevMode('quiz',this)">🧠 Quiz</button>
+    </div>
+    <div id="rev-stats" style="font-size:.8rem;color:var(--text-light);margin-bottom:12px;"></div>
+    <button class="btn btn-primary" onclick="startRevision()">▶ Start</button>
+  </div>
+  <div id="revision-area"></div>
+</div>
+
+<!-- ══ ARCHIVE PANEL ══ -->
+<div class="panel" id="panel-archive">
+  <div style="margin-bottom:14px;">
+    <button onclick="goToMainMenu()" style="background:none;border:1px solid var(--sand-dark);border-radius:20px;padding:6px 15px;font-family:'Lato',sans-serif;font-size:.78rem;font-weight:700;color:var(--text-mid);cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--saffron)';this.style.color='var(--saffron)'" onmouseout="this.style.borderColor='var(--sand-dark)';this.style.color='var(--text-mid)'">← Menu</button>
+  </div>
+  <div style="background:var(--card-bg);border-radius:20px;padding:22px;box-shadow:var(--shadow);border:1px solid rgba(201,180,138,.35);">
+    <div style="font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:4px;">Learning Archive</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--text-dark);margin-bottom:14px;">All completed lessons by week</div>
+    <div id="archive-content"><p style="color:var(--text-light);font-size:.86rem;">Complete your first full lesson to start your archive.</p></div>
+  </div>
+</div>
+
+</div><!-- /app-wrapper -->
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal"><button class="modal-close" onclick="closeModal()">✕</button><div id="modal-body"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── SAFE STORAGE WRAPPER ──
+// localStorage can be blocked or non-persistent on file:// in Chromium browsers
+// (Chrome, Arc, Edge). IndexedDB DOES persist there, so we use it as a durable
+// fallback. IndexedDB is async, but the rest of the app reads storage synchronously,
+// so we keep an in-memory cache (_mem) that is hydrated from IndexedDB at startup
+// (see hydrateStore() in window.onload) and write through to IndexedDB on every save.
+const _mem = {};
+
+// ── IndexedDB key-value tier ──
+const IDB_NAME = 'kk_store', IDB_STORE = 'kv';
+let _idb = null;
+
+function idbOpen() {
+  return new Promise(resolve => {
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch(e) { resolve(null); }
+  });
+}
+
+function idbWrite(op, k, v) {
+  if (!_idb) return;
+  try {
+    const os = _idb.transaction(IDB_STORE, 'readwrite').objectStore(IDB_STORE);
+    if (op === 'put') os.put(v, k);
+    else if (op === 'delete') os.delete(k);
+    else if (op === 'clear') os.clear();
+  } catch(e) {}
+}
+
+// Load every persisted IndexedDB key into the in-memory cache so the synchronous
+// store API can serve them. Called once, awaited, before the app reads anything.
+async function hydrateStore() {
+  _idb = await idbOpen();
+  if (!_idb) return;
+  await new Promise(resolve => {
+    try {
+      const req = _idb.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).openCursor();
+      req.onsuccess = e => {
+        const cur = e.target.result;
+        if (cur) { if (_mem[cur.key] === undefined) _mem[cur.key] = String(cur.value); cur.continue(); }
+        else resolve();
+      };
+      req.onerror = () => resolve();
+    } catch(e) { resolve(); }
+  });
+}
+
+const store = {
+  getItem(k) {
+    try { const v = localStorage.getItem(k); if (v !== null) return v; } catch(e) {}
+    return _mem[k] ?? null;          // populated from IndexedDB during hydrateStore()
+  },
+  setItem(k, v) {
+    v = String(v);
+    _mem[k] = v;                     // always cache for this session
+    try { localStorage.setItem(k, v); } catch(e) {}
+    idbWrite('put', k, v);          // durable fallback (persists on file:// too)
+  },
+  removeItem(k) {
+    delete _mem[k];
+    try { localStorage.removeItem(k); } catch(e) {}
+    idbWrite('delete', k);
+  },
+  clear() {
+    Object.keys(_mem).forEach(k => delete _mem[k]);
+    try { localStorage.clear(); } catch(e) {}
+    idbWrite('clear');
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+let apiKey = store.getItem('kk_apikey') || '';
+
+// Load and sanitize state — strip any corrupt/incomplete archive entries from old versions
+function loadState() {
+  try {
+    const raw = store.getItem('kk_state');
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!parsed) return null;
+    // Ensure all required fields exist
+    if (!parsed.done) parsed.done = { word:false, sentence:false, roleplay:false };
+    if (!Array.isArray(parsed.archive)) parsed.archive = [];
+    // Remove any archive entries missing lesson or lesson.word/sentence/roleplay
+    parsed.archive = parsed.archive.filter(e =>
+      e && e.lesson && e.lesson.word && e.lesson.sentence && e.lesson.roleplay &&
+      e.lesson.word.kannada && e.lesson.sentence.kannada
+    );
+    return parsed;
+  } catch(e) {
+    console.warn('State parse error, resetting:', e);
+    return null;
+  }
+}
+
+let state = loadState() || {
+  day:1, streak:0, lastDate:null, wordsLearned:0, level:1,
+  done:{ word:false, sentence:false, roleplay:false },
+  todayData:null, archive:[]
+};
+
+const TOPICS = ['daily life & food','travel & directions','work & professional','family & relationships'];
+const TOPIC_TAGS = ['daily','travel','work','family'];
+let currentStep = 0;  // 0=word 1=sentence 2=roleplay
+let revMode = 'flashcard';
+let revQueue = [];
+let revIdx = 0;
+let quizScore = 0;
+let quizTotal = 0;
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+window.onload = async () => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+  // Hydrate the in-memory cache from IndexedDB before reading any persisted values,
+  // then re-read the two values that were loaded at parse time (before hydration).
+  await hydrateStore();
+  apiKey = store.getItem('kk_apikey') || apiKey;
+  const reloaded = loadState();
+  if (reloaded) state = reloaded;
+
+  initApp();
+};
+
+// Initialise the app
+// Lands on the main menu (chrome visible, no focus mode, no lesson loaded)
+function initApp() {
+  // Re-read apiKey in case it was saved in a previous session
+  apiKey = store.getItem('kk_apikey') || '';
+  updateStats();
+  if (apiKey) {
+    hideApiGate();
+    checkNewDay();
+  } else {
+    showApiGate();
+  }
+  setFocusMode(false);
+  updateArchiveUI();
+  updateRevStats();
+  // Show welcome card on main menu — hide lesson steps
+  [0,1,2].forEach(i => document.getElementById('step-'+i).style.display = 'none');
+  document.getElementById('step-indicator').style.display = 'none';
+  document.getElementById('welcome-card').style.display = 'block';
+  updateWelcomeBtn();
+}
+
+function resetApp() {
+  if (!confirm('This will clear ALL saved data (lessons, archive, API key). Are you sure?')) return;
+  store.clear();
+  location.reload();
+}
+
+function showApiGate() {
+  document.getElementById('api-gate').style.display = 'flex';
+  const input = document.getElementById('api-key-input');
+  if (input) setTimeout(() => input.focus(), 50);
+}
+
+function hideApiGate() {
+  document.getElementById('api-gate').style.display = 'none';
+}
+
+function saveApiKey() {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (!v.startsWith('sk-ant')) { showToast('⚠️ Enter a valid Anthropic key'); return; }
+  apiKey = v;
+  store.setItem('kk_apikey', apiKey);
+  hideApiGate();
+  showToast('✓ API key saved!');
+  checkNewDay();
+  // Stay on main menu — user clicks Load Lesson when ready
+}
+
+function checkNewDay() {
+  const today = new Date().toDateString();
+  if (state.lastDate !== today) {
+    if (state.lastDate) {
+      const yest = new Date(); yest.setDate(yest.getDate()-1);
+      state.streak = state.lastDate === yest.toDateString() ? state.streak+1 : 1;
+    } else state.streak = 1;
+    state.lastDate = today;
+    state.done = { word:false, sentence:false, roleplay:false };
+    state.todayData = null;
+    saveState();
+  }
+}
+
+function saveState() {
+  store.setItem('kk_state', JSON.stringify(state));
+  updateStats();
+}
+
+// ── FOCUS MODE — hide all chrome when learning ──
+let focusActive = false;
+
+function setFocusMode(on) {
+  focusActive = on;
+  const chromeIds = ['chrome-ornament','chrome-h1','chrome-subtitle','chrome-ask-wrap',
+                     'chrome-badge','chrome-stats','chrome-nav','chrome-reset','chrome-theme'];
+  chromeIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', on);
+  });
+  // Show/hide the floating ← Menu button
+  const menuBtn = document.getElementById('focus-menu-btn');
+  if (menuBtn) menuBtn.classList.toggle('visible', on);
+  if (on) {
+    document.getElementById('ask-body')?.classList.remove('open');
+    document.getElementById('ask-toggle-btn')?.classList.remove('open');
+  }
+}
+
+function goToMainMenu() {
+  // Clear completion-mode hiding — enterCompletionMode() sets inline display:none
+  // on the header, stats, nav, reset and panels; setFocusMode(false) only clears
+  // the CSS class, not these inline styles, so restore them here.
+  COMPLETION_HIDE.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  });
+  // Exit focus mode — show all chrome
+  setFocusMode(false);
+  // Make the Today panel the active one (so this works from Revise/Archive too)
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-today').classList.add('active');
+  const firstTab = document.querySelector('.nav-tab');
+  if (firstTab) firstTab.classList.add('active');
+  // Hide lesson cards, step indicator, and completion card
+  [0,1,2].forEach(i => document.getElementById('step-'+i).style.display = 'none');
+  document.getElementById('step-indicator').style.display = 'none';
+  document.getElementById('lesson-complete-card').style.display = 'none';
+  // Restore the Today panel and show the welcome (home) card
+  document.getElementById('panel-today').style.display = '';
+  document.getElementById('welcome-card').style.display = 'block';
+  updateWelcomeBtn();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Reflect whether a lesson has already been completed today on the welcome button.
+function updateWelcomeBtn() {
+  const btn = document.getElementById('welcome-start-btn');
+  if (!btn) return;
+  const todayStr = new Date().toDateString();
+  const doneToday = state.archive.some(e => e && e.date === todayStr && e.lesson && e.lesson.word);
+  btn.textContent = doneToday
+    ? "✓ Today's lesson completed. Start another lesson"
+    : "▶ Start Today's Lesson";
+}
+
+function goToMenuFromRevision() {
+  setFocusMode(false);
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-today').style.display = '';
+  document.getElementById('panel-today').classList.add('active');
+  document.querySelector('.nav-tab').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+
+function exitFocusMode() {
+  setFocusMode(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setCompletionMode(on) {
+  // Like focus mode but also hides the today panel and the floating menu button
+  setFocusMode(on);
+  const todayPanel = document.getElementById('panel-today');
+  if (todayPanel) todayPanel.style.display = on ? 'none' : '';
+  // Hide the floating menu button on completion screen — it has its own ← Menu
+  const menuBtn = document.getElementById('focus-menu-btn');
+  if (menuBtn) menuBtn.classList.toggle('visible', false);
+}
+const COMPLETION_HIDE = [
+  'chrome-ornament','chrome-h1','chrome-subtitle','chrome-ask-wrap','chrome-badge',
+  'chrome-stats','chrome-nav','chrome-reset',
+  'panel-today','panel-revision','panel-archive','focus-exit-btn'
+];
+
+function enterCompletionMode() {
+  COMPLETION_HIDE.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const card = document.getElementById('lesson-complete-card');
+  card.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function exitCompletionMode() {
+  COMPLETION_HIDE.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  });
+  // Re-apply chrome-ui hidden class state from focus mode
+  setFocusMode(false);
+  document.getElementById('lesson-complete-card').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateStats() {
+  document.getElementById('day-count').textContent = state.day;
+  document.getElementById('streak-val').textContent = state.streak;
+  document.getElementById('words-val').textContent = getPracticedWords().length;
+  document.getElementById('level-val').textContent = state.level;
+  updateRevStats();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  STEP NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function goStep(n) {
+  // Hide all step cards
+  [0,1,2].forEach(i => document.getElementById('step-'+i).style.display = 'none');
+  document.getElementById('step-'+n).style.display = 'block';
+  currentStep = n;
+  updateStepIndicator();
+  document.getElementById('step-'+n).scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function updateStepIndicator() {
+  const keys = ['word','sentence','roleplay'];
+  [0,1,2].forEach(i => {
+    const dot = document.getElementById('sdot-'+i);
+    dot.classList.remove('active','done');
+    if (state.done[keys[i]]) dot.classList.add('done');
+    else if (i === currentStep) dot.classList.add('active');
+  });
+  [0,1].forEach(i => {
+    const line = document.getElementById('sline-'+i);
+    line.classList.toggle('done', state.done[keys[i]]);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FETCH LESSON
+// ══════════════════════════════════════════════════════════════
+async function loadTodayUI() {
+  restoreCompletionUI();
+  // Only enter focus mode if lesson is not already complete
+  if (!(state.done.word && state.done.sentence && state.done.roleplay)) {
+    setFocusMode(true);
+    if (state.todayData) { renderAll(state.todayData); return; }
+    await fetchLesson();
+  }
+}
+
+function restoreCompletionUI() {
+  if (state.done.word) markBtnDone('cbtn-word', 'Word done ✓');
+  if (state.done.sentence) markBtnDone('cbtn-sentence', 'Sentence done ✓');
+  if (state.done.roleplay) markBtnDone('cbtn-roleplay', 'Role play done ✓');
+  updateStepIndicator();
+  // Never auto-show the completion card on page load — it only appears
+  // when the user completes all 3 steps in the current session (via completeStep)
+  // Hide step cards if lesson is done so today panel is clean
+  if (state.done.word && state.done.sentence && state.done.roleplay) {
+    [0,1,2].forEach(i => document.getElementById('step-'+i).style.display = 'none');
+    document.getElementById('step-indicator').style.display = 'none';
+  }
+}
+
+async function fetchLesson() {
+  // Use the currently selected theme if set, otherwise rotate through topics by day
+  const sel = document.getElementById('theme-select');
+  const selVal = sel ? sel.value : 'random';
+  const topic = (selVal && selVal !== 'random') ? selVal : TOPICS[(state.day-1) % TOPICS.length];
+  return fetchLessonWithTopic(topic);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════════════
+function renderAll(l) { renderWord(l); renderSentence(l); renderRoleplay(l); }
+
+function renderWord(l) {
+  const w = l.word;
+  const ti = TOPICS.indexOf(l.topic), tc = TOPIC_TAGS[Math.max(ti,0)];
+  document.getElementById('word-topic').innerHTML = `<span class="topic-tag tag-${tc}">${l.topic}</span>`;
+  document.getElementById('word-body').innerHTML = `
+    <div class="word-big">${w.kannada}</div>
+    <div class="word-roman">${w.transliteration}</div>
+    <div class="word-eng"><strong>${w.meaning}</strong> · ${w.partOfSpeech}</div>
+    <div class="tip-box">💡 <strong>Tip:</strong> ${w.example}</div>`;
+  document.getElementById('word-controls').style.display = 'block';
+}
+
+function renderSentence(l) {
+  const s = l.sentence;
+  document.getElementById('sentence-body').innerHTML = `
+    <div class="sent-block">
+      <div class="sent-kn">${s.kannada}</div>
+      <div class="sent-roman">${s.transliteration}</div>
+      <div class="sent-eng">${s.meaning}</div>
+    </div>
+    <div class="tip-box">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>
+    ${s.breakdownHindi ? `<div class="tip-box">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}`;
+  document.getElementById('sentence-controls').style.display = 'block';
+}
+
+function renderRoleplay(l) {
+  const r = l.roleplay;
+  document.getElementById('rp-scenario-title').textContent = '🎬 ' + r.scenario;
+  document.getElementById('roleplay-body').innerHTML = `
+    <div class="rp-scene">Scenario · ${r.scenario}</div>
+    ${r.lines.map(line => {
+      const iy = line.speaker === 'YOU';
+      return `<div class="chat-bubble ${iy?'you':''}">
+        <div class="avatar ${iy?'you':'npc'}">${iy?'🧑':'🏪'}</div>
+        <div class="bubble-inner">
+          <div class="bubble-name">${iy?'You':r.npcName}</div>
+          <div class="bubble-text ${iy?'you':'npc'}">
+            <div class="bubble-kn">${line.kannada}</div>
+            <div class="bubble-roman">${line.transliteration}</div>
+            <div class="bubble-eng">${line.english}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+  document.getElementById('roleplay-controls').style.display = 'block';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  COMPLETION — the key mechanic
+// ══════════════════════════════════════════════════════════════
+function completeStep(key, stepIdx) {
+  if (state.done[key]) {
+    // Already done — just navigate next
+    if (stepIdx < 2) goStep(stepIdx + 1);
+    return;
+  }
+  state.done[key] = true;
+  if (key === 'word') state.wordsLearned++;
+  saveState();
+  markBtnDone('cbtn-'+key, key === 'roleplay' ? 'Role play done ✓' : key.charAt(0).toUpperCase()+key.slice(1)+' done ✓');
+  updateStepIndicator();
+  showToast(`✨ ${key.charAt(0).toUpperCase()+key.slice(1)} complete!`);
+
+  // If all 3 done → archive, exit focus, show completion on main menu
+  if (state.done.word && state.done.sentence && state.done.roleplay) {
+    console.log('All 3 complete! Calling archiveToday...');
+    archiveToday();
+    setTimeout(() => {
+      enterCompletionMode();
+      showToast('🎉 Lesson complete! Well done!');
+    }, 400);
+  } else if (stepIdx < 2) {
+    // Auto-advance
+    setTimeout(() => goStep(stepIdx + 1), 500);
+  }
+}
+
+function markBtnDone(id, label) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.className = 'complete-btn done';
+  btn.textContent = '✓ ' + label;
+}
+
+function repeatTodayLesson() {
+  // Reset completion state but keep the same lesson data
+  state.done = { word:false, sentence:false, roleplay:false };
+  saveState();
+  // Hide completion card, restore today panel, go straight into focus mode
+  document.getElementById('lesson-complete-card').style.display = 'none';
+  document.getElementById('panel-today').style.display = '';
+  document.getElementById('step-indicator').style.display = '';
+  setFocusMode(true);
+  // Reset button states
+  ['cbtn-word','cbtn-sentence','cbtn-roleplay'].forEach((id,i) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.className = 'complete-btn todo';
+    btn.textContent = i < 2 ? '✓ Mark Complete & Continue →' : '✓ Mark Complete — Lesson Done! 🎉';
+  });
+  ['rec-panel-word','rec-panel-sentence','rec-panel-roleplay'].forEach(id =>
+    document.getElementById(id).innerHTML = ''
+  );
+  goStep(0);
+  // Re-render the existing lesson data
+  if (state.todayData) renderAll(state.todayData);
+}
+
+function archiveToday() {
+  if (!state.todayData) return;
+  const sid = state.todayData.sessionId;
+  // Archive EVERY completed session (daily lesson or dropdown-picked).
+  // Dedupe only on the unique session id, so repeating the exact same loaded
+  // lesson doesn't create a duplicate entry, but a new lesson always archives.
+  if (sid && state.archive.find(a => a.sessionId === sid)) return;
+  state.archive.push({
+    sessionId: sid,
+    day: state.day,
+    date: new Date().toDateString(),
+    week: getWeekNum(new Date()),
+    lesson: JSON.parse(JSON.stringify(state.todayData)) // deep copy to avoid reference issues
+  });
+  saveState();
+  console.log('Archived session', sid, '(day', state.day + ') — archive size:', state.archive.length);
+}
+
+function getWeekNum(d) {
+  const j = new Date(d.getFullYear(),0,1);
+  return Math.ceil((((d-j)/86400000)+j.getDay()+1)/7);
+}
+
+function loadNewDay() {
+  // Hide completion card, stay clean — enter focus mode directly for new lesson
+  document.getElementById('lesson-complete-card').style.display = 'none';
+  document.getElementById('welcome-card').style.display = 'none';
+  document.getElementById('step-indicator').style.display = '';
+  document.getElementById('panel-today').style.display = '';
+  setFocusMode(true);
+  state.day++;
+  if (state.day % 5 === 0 && state.level < 10) state.level++;
+  state.done = {word:false,sentence:false,roleplay:false};
+  state.todayData = null;
+  document.getElementById('practice-area').innerHTML = '';
+  // Reset UI
+  ['word-body','sentence-body','roleplay-body'].forEach(id =>
+    document.getElementById(id).innerHTML = `<div class="loading-state">Loading…<div class="loading-dots"><span></span><span></span><span></span></div></div>`
+  );
+  ['word-controls','sentence-controls','roleplay-controls'].forEach(id =>
+    document.getElementById(id).style.display = 'none'
+  );
+  ['cbtn-word','cbtn-sentence','cbtn-roleplay'].forEach((id,i) => {
+    const btn = document.getElementById(id);
+    btn.className = 'complete-btn todo';
+    btn.textContent = i < 2 ? '✓ Mark Complete & Continue →' : '✓ Mark Complete — Lesson Done! 🎉';
+  });
+  ['rec-panel-word','rec-panel-sentence','rec-panel-roleplay'].forEach(id =>
+    document.getElementById(id).innerHTML = ''
+  );
+  saveState();
+  goStep(0);
+  fetchLesson();
+  showToast('🌅 New day, new words!');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  AUDIO
+// ══════════════════════════════════════════════════════════════
+let speakingBtn = null;
+
+function speak(typeOrObj, btnEl) {
+  let text, phonetic;
+  if (typeOrObj === 'word') { text = state.todayData?.word?.kannada; phonetic = state.todayData?.word?.transliteration; }
+  else if (typeOrObj === 'sentence') { text = state.todayData?.sentence?.kannada; phonetic = state.todayData?.sentence?.transliteration; }
+  else if (typeOrObj === 'roleplay') {
+    const lines = state.todayData?.roleplay?.lines || [];
+    text = lines.map(l=>l.kannada).join(' . ');
+    phonetic = lines.map(l=>l.transliteration).join(' . ');
+  } else if (typeof typeOrObj === 'object') {
+    text = typeOrObj.kannada; phonetic = typeOrObj.transliteration;
+  } else { text = typeOrObj; phonetic = typeOrObj; }
+
+  if (!text) return;
+  if (!('speechSynthesis' in window)) { showToast('⚠️ Browser audio not available'); return; }
+
+  window.speechSynthesis.cancel();
+  if (speakingBtn) { speakingBtn.classList.remove('speaking'); }
+  speakingBtn = btnEl || null;
+  if (btnEl) btnEl.classList.add('speaking');
+
+  const voices = window.speechSynthesis.getVoices();
+  const kv = voices.find(v => v.lang && v.lang.startsWith('kn'));
+  const speakText = kv ? text : phonetic;
+  const lang = kv ? 'kn-IN' : 'en-IN';
+  const voice = kv || voices.find(v=>v.lang==='en-IN') || voices.find(v=>v.lang.startsWith('en'));
+
+  if (!kv) showToast('🔈 Speaking phonetic guide: ' + (phonetic||'').slice(0,40));
+
+  const parts = speakText.split(/[.]/g).filter(s=>s.trim());
+  let i = 0;
+  const next = () => {
+    if (i >= parts.length) {
+      if (btnEl) btnEl.classList.remove('speaking');
+      speakingBtn = null; return;
+    }
+    const u = new SpeechSynthesisUtterance(parts[i++].trim());
+    u.lang = lang; u.rate = kv ? 0.82 : 0.72; u.pitch = 1.0;
+    if (voice) u.voice = voice;
+    u.onend = next;
+    u.onerror = () => { if(btnEl) btnEl.classList.remove('speaking'); speakingBtn=null; };
+    window.speechSynthesis.speak(u);
+  };
+  next();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RECORDING
+// ══════════════════════════════════════════════════════════════
+const recState = {};
+async function toggleRec(type) { if (recState[type]?.on) stopRec(type); else await startRec(type); }
+
+async function startRec(type) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    const chunks = [];
+    const mr = new MediaRecorder(stream);
+    mr.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+    mr.onstop = () => {
+      stream.getTracks().forEach(t=>t.stop());
+      const url = URL.createObjectURL(new Blob(chunks,{type:'audio/webm'}));
+      document.getElementById(`rec-panel-${type}`).innerHTML = `
+        <div class="rec-panel">
+          <h4>🎙 Your Recording</h4>
+          <audio class="playback" controls src="${url}"></audio>
+          <div style="margin-top:9px;display:flex;gap:7px;flex-wrap:wrap">
+            <button class="speak-btn" style="font-size:.75rem;padding:7px 12px" onclick="speak('${type}',this)">🔊 Hear correct pronunciation</button>
+            <button class="btn-secondary btn" style="font-size:.75rem;padding:7px 12px" onclick="document.getElementById('rec-panel-${type}').innerHTML=''">🗑 Clear</button>
+          </div>
+        </div>`;
+      showToast('✅ Recorded! Compare with correct pronunciation.');
+    };
+    mr.start();
+    recState[type] = {on:true, mr, anim:null};
+    document.getElementById(`rec-panel-${type}`).innerHTML = `
+      <div class="rec-panel"><h4>🔴 Recording…</h4>
+        <div class="rec-wave" id="wave-${type}">
+          ${Array(16).fill(0).map(()=>`<div class="rec-bar" style="height:6px"></div>`).join('')}
+        </div>
+      </div>`;
+    animWave(type);
+    const btn = document.getElementById('rec-'+type);
+    btn.classList.add('recording'); btn.textContent = '⏹ Stop';
+    showToast('🔴 Recording — speak now!');
+  } catch(e) { showToast('⚠️ Mic access denied — allow in browser settings.'); }
+}
+
+function stopRec(type) {
+  const s = recState[type]; if(!s) return;
+  if(s.anim) cancelAnimationFrame(s.anim);
+  if(s.mr && s.mr.state!=='inactive') s.mr.stop();
+  s.on = false;
+  const btn = document.getElementById('rec-'+type);
+  if(btn){btn.classList.remove('recording');btn.textContent='🎙 Record Me';}
+}
+
+function animWave(type) {
+  const wf = document.getElementById('wave-'+type); if(!wf) return;
+  const bars = wf.querySelectorAll('.rec-bar');
+  const f = () => { if(!recState[type]?.on) return; bars.forEach(b=>b.style.height=(4+Math.random()*24)+'px'); recState[type].anim=requestAnimationFrame(f); };
+  f();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PRACTICE MODE
+// ══════════════════════════════════════════════════════════════
+let pRole=null, pLines=[], pNpc='', pStep=0;
+
+function openPractice() {
+  if(!state.todayData) return;
+  const r = state.todayData.roleplay;
+  pLines=r.lines; pNpc=r.npcName; pRole=null;
+  document.getElementById('practice-area').innerHTML=`
+    <div class="practice-intro">
+      <h4>🎮 Practice: ${r.scenario}</h4>
+      <p>Pick your role — the AI speaks the other character's lines aloud. Record yours!</p>
+      <div class="role-choice">
+        <button class="role-btn" onclick="pickRole('YOU',this)"><span class="role-icon">🧑</span><strong>Play Yourself</strong><br><span style="font-size:.72rem;color:var(--text-light)">AI plays ${r.npcName}</span></button>
+        <button class="role-btn" onclick="pickRole('NPC',this)"><span class="role-icon">🏪</span><strong>Play ${r.npcName}</strong><br><span style="font-size:.72rem;color:var(--text-light)">AI plays You</span></button>
+      </div>
+      <button class="btn btn-leaf" id="start-prac-btn" onclick="startPrac()" style="display:none">▶ Start Conversation</button>
+    </div>
+    <div class="prac-chat" id="prac-chat"></div>`;
+  document.getElementById('practice-area').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function pickRole(role,btn) {
+  pRole=role;
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('start-prac-btn').style.display='inline-flex';
+}
+
+function startPrac() { pStep=0; document.getElementById('prac-chat').innerHTML=''; nextPrac(); }
+
+function nextPrac() {
+  if(pStep>=pLines.length){
+    document.getElementById('prac-chat').insertAdjacentHTML('beforeend',`
+      <div class="prac-done"><div style="font-size:2.4rem;margin-bottom:6px">🌟</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--mud);margin-bottom:5px">ಶಾಭಾಸ್! Well done!</div>
+        <p style="color:var(--text-light);font-size:.83rem;margin-bottom:12px">Conversation complete!</p>
+        <button class="btn btn-primary" onclick="startPrac()">🔄 Again</button></div>`);
+    return;
+  }
+  const line = pLines[pStep];
+  const aiTurn = line.speaker !== pRole;
+  const chat = document.getElementById('prac-chat');
+  if(aiTurn){
+    const div = document.createElement('div');
+    div.className='prac-turn ai-turn';
+    const ld = JSON.stringify({kannada:line.kannada,transliteration:line.transliteration}).replace(/"/g,'&quot;');
+    div.innerHTML=`<div class="turn-lbl ai">${line.speaker==='NPC'?pNpc:'You'} (AI 🔊)</div>
+      <div class="bubble-kn" style="margin-bottom:3px">${line.kannada}</div>
+      <div class="bubble-roman">${line.transliteration}</div>
+      <div class="bubble-eng" style="margin-top:2px">${line.english}</div>
+      <button class="speak-btn" style="margin-top:8px;font-size:.72rem;padding:6px 11px" onclick='speak(${ld},this)'>🔊 Replay</button>`;
+    chat.appendChild(div); chat.scrollTop=chat.scrollHeight;
+    setTimeout(()=>speak({kannada:line.kannada,transliteration:line.transliteration},null),350);
+    pStep++;
+    setTimeout(nextPrac, Math.max(2600,line.kannada.length*140));
+  } else {
+    const s=pStep;
+    const div=document.createElement('div');
+    div.id='pt-'+s; div.className='prac-turn your-turn active';
+    div.innerHTML=`<div class="turn-lbl you">Your turn 🎤</div>
+      <div style="font-weight:700;font-size:.86rem;color:var(--mud);margin-bottom:4px">Say in Kannada:</div>
+      <div class="cue-eng">"${line.english}"</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="rec-btn" id="pr-${s}" onclick="togglePR(${s})">🎙 Record My Line</button>
+      </div>
+      <button class="hint-btn" onclick="document.getElementById('ph-${s}').classList.toggle('show')">💡 Show Kannada hint</button>
+      <div class="hint-box" id="ph-${s}"><strong>ಕನ್ನಡ:</strong> ${line.kannada}<br><em>${line.transliteration}</em></div>
+      <div id="pa-${s}"></div>
+      <button class="btn btn-leaf" style="margin-top:11px;font-size:.79rem;padding:8px 15px" onclick="okStep(${s})">✓ Done — Next →</button>`;
+    chat.appendChild(div); chat.scrollTop=chat.scrollHeight;
+  }
+}
+
+const pr={};
+async function togglePR(s){
+  if(pr[s]?.on){if(pr[s].mr&&pr[s].mr.state!=='inactive')pr[s].mr.stop();pr[s].on=false;const b=document.getElementById('pr-'+s);if(b){b.classList.remove('recording');b.textContent='🎙 Again';}return;}
+  try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});const chunks=[];const mr=new MediaRecorder(stream);
+    mr.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+    mr.onstop=()=>{stream.getTracks().forEach(t=>t.stop());const url=URL.createObjectURL(new Blob(chunks,{type:'audio/webm'}));const el=document.getElementById('pa-'+s);if(el)el.innerHTML=`<audio class="playback" controls src="${url}" style="margin-top:7px"></audio>`;showToast('✅ Recorded!');};
+    mr.start();pr[s]={on:true,mr};const b=document.getElementById('pr-'+s);if(b){b.classList.add('recording');b.textContent='⏹ Stop';}showToast('🔴 Recording…');
+  }catch(e){showToast('⚠️ Mic denied.');}
+}
+
+function okStep(s){if(pr[s]?.on&&pr[s].mr&&pr[s].mr.state!=='inactive')pr[s].mr.stop();const el=document.getElementById('pt-'+s);if(el)el.classList.remove('active');pStep++;setTimeout(nextPrac,260);}
+
+// ══════════════════════════════════════════════════════════════
+//  REVISION
+// ══════════════════════════════════════════════════════════════
+function updateRevStats() {
+  const el = document.getElementById('rev-stats');
+  if(!el) return;
+  const valid = state.archive.filter(e => e && e.lesson && e.lesson.word && e.lesson.sentence);
+  // Count unique cards by deduplicating on Kannada text
+  const seen = new Set();
+  let uniqueCards = 0;
+  valid.forEach(e => {
+    if (e.lesson.word.kannada && !seen.has(e.lesson.word.kannada)) { seen.add(e.lesson.word.kannada); uniqueCards++; }
+    if (e.lesson.sentence.kannada && !seen.has(e.lesson.sentence.kannada)) { seen.add(e.lesson.sentence.kannada); uniqueCards++; }
+  });
+  el.textContent = uniqueCards > 0 ? `${uniqueCards} unique card${uniqueCards>1?'s':''} available` : 'Complete a full lesson to unlock revision';
+}
+
+function setRevMode(mode, btn) {
+  revMode = mode;
+  document.querySelectorAll('.rev-mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function startRevision() {
+  // Filter to only valid complete entries (guards against corrupt old localStorage)
+  const validEntries = state.archive.filter(e =>
+    e && e.lesson && e.lesson.word && e.lesson.sentence &&
+    e.lesson.word.kannada && e.lesson.sentence.kannada
+  );
+  if (!validEntries.length) {
+    document.getElementById('revision-area').innerHTML = '<div class="error-state">📚 Complete at least one full lesson first!</div>';
+    return;
+  }
+  // Deduplicate by Kannada text — if ಊಟ appears on Day 1, 3, 5 it counts as ONE card
+  const seenKannada = new Set();
+  const cards = [];
+  validEntries.forEach(entry => {
+    const w = entry.lesson.word;
+    const s = entry.lesson.sentence;
+    if (w.kannada && !seenKannada.has(w.kannada)) {
+      seenKannada.add(w.kannada);
+      cards.push({ type:'word', data: w, day: entry.day });
+    }
+    if (s.kannada && !seenKannada.has(s.kannada)) {
+      seenKannada.add(s.kannada);
+      cards.push({ type:'sentence', data: s, day: entry.day, word: w });
+    }
+  });
+  shuffle(cards);
+  revQueue = cards;
+  revIdx = 0;
+  quizScore = 0;
+  quizTotal = 0;
+
+  if (revMode === 'flashcard') {
+    showFlashcard();
+  } else {
+    // Pre-build all quiz questions — one per unique card, no repeats
+    quizQuestions = cards.map(card => ({ q: buildQuizQuestion(card), answered: false, chosen: null }));
+    quizTotal = 0; quizScore = 0;
+    renderQuizQuestion();
+  }
+}
+
+// ── FLASHCARDS ──
+function showFlashcard() {
+  const total = revQueue.length;
+
+  if (total === 0) {
+    document.getElementById('revision-area').innerHTML = '<div class="error-state">No cards to show.</div>';
+    return;
+  }
+
+  // Clamp index
+  if (revIdx < 0) revIdx = 0;
+  if (revIdx >= total) {
+    // All cards done — show completion
+    document.getElementById('revision-area').innerHTML = `
+      <div class="flashcard" style="border-color:var(--leaf)">
+        <div style="font-size:2.4rem;margin-bottom:8px">🎊</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--mud);margin-bottom:6px">All cards reviewed!</div>
+        <p style="color:var(--text-light);margin-bottom:14px">You went through all ${total} cards</p>
+        <button class="btn btn-primary" onclick="revIdx=0;showFlashcard()">↩ Start Over</button>
+      </div>`;
+    return;
+  }
+
+  const card = revQueue[revIdx];
+  const isWord = card.type === 'word';
+  const front = card.data.kannada;
+  const roman = card.data.transliteration;
+  const answer = card.data.meaning;
+  const extra = isWord ? (card.data.example || '') : (card.data.breakdown || '');
+  const ld = JSON.stringify({kannada:front, transliteration:roman}).replace(/"/g,'&quot;');
+
+  const prevDisabled = revIdx === 0 ? 'disabled' : '';
+  const nextLabel = revIdx === total - 1 ? 'Finish ✓' : 'Next →';
+
+  document.getElementById('revision-area').innerHTML = `
+    <div class="flashcard">
+      <div class="fc-counter">Card ${revIdx+1} of ${total}</div>
+      <div class="fc-type ${card.type}">${isWord ? '🌟 Word' : '💬 Sentence'} · Day ${card.day}</div>
+      <div class="fc-front ${card.type}">${front}</div>
+      <div class="fc-roman">${roman}</div>
+
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0 4px">
+        <button class="speak-btn" style="font-size:.78rem;padding:8px 14px" onclick='speak(${ld},this)'>🔊 Hear</button>
+        <button class="rec-btn" id="fc-rec" style="font-size:.78rem;padding:8px 14px" onclick="toggleFcRec()">🎙 Say it</button>
+        <button class="btn btn-secondary" style="font-size:.78rem;padding:8px 14px" onclick="document.getElementById('fc-ans').classList.add('show')">👁 Show Answer</button>
+      </div>
+
+      <div id="fc-rec-panel"></div>
+
+      <div class="fc-answer" id="fc-ans">
+        <div class="fc-meaning">${answer}</div>
+        <div class="fc-extra">${extra}</div>
+        <div class="fc-rate">
+          <button class="rate-btn hard" onclick="flagHard()">😅 Hard — see again</button>
+          <button class="rate-btn easy" onclick="fcNext()">😊 Easy — next</button>
+        </div>
+      </div>
+
+      <!-- Navigation arrows — always visible -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;">
+        <button class="nav-arrow" ${prevDisabled} onclick="fcPrev()" title="Previous card">←</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          ${Array.from({length:Math.min(total,10)}, (_,i) => {
+            const dotIdx = total <= 10 ? i : Math.round(i * (total-1) / 9);
+            const isCurrent = total <= 10 ? i === revIdx : (revIdx >= Math.round(i*(total-1)/9) && (i===9 || revIdx < Math.round((i+1)*(total-1)/9)));
+            return `<div style="width:8px;height:8px;border-radius:50%;background:${isCurrent ? 'var(--saffron)' : 'var(--sand-dark)'};transition:background .2s;"></div>`;
+          }).join('')}
+        </div>
+        <button class="nav-arrow" onclick="fcNext()" title="Next card">${revIdx === total-1 ? '✓' : '→'}</button>
+      </div>
+    </div>`;
+}
+
+function fcNext() {
+  revIdx++;
+  showFlashcard();
+}
+
+function fcPrev() {
+  if (revIdx > 0) { revIdx--; showFlashcard(); }
+}
+
+function flagHard() {
+  // Mark as hard — will be shown again at the end in a separate review pass
+  if (revQueue[revIdx]) revQueue[revIdx].hard = true;
+  revIdx++;
+  // If we just finished the main pass, add hard cards to the end for review
+  if (revIdx >= revQueue.length) {
+    const hardCards = revQueue.filter(c => c.hard).map(c => ({...c, hard:false}));
+    if (hardCards.length) {
+      revQueue = [...revQueue, ...hardCards];
+      showToast(`🔁 ${hardCards.length} hard card${hardCards.length>1?'s':''} queued for review`);
+    }
+  }
+  showFlashcard();
+}
+
+let fcRecOn=false,fcMR=null,fcChunks=[];
+function toggleFcRec(){
+  if(fcRecOn){if(fcMR&&fcMR.state!=='inactive')fcMR.stop();fcRecOn=false;const b=document.getElementById('fc-rec');if(b){b.classList.remove('recording');b.textContent='🎙 Say it';}return;}
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    fcChunks=[];fcMR=new MediaRecorder(stream);
+    fcMR.ondataavailable=e=>{if(e.data.size>0)fcChunks.push(e.data);};
+    fcMR.onstop=()=>{stream.getTracks().forEach(t=>t.stop());const url=URL.createObjectURL(new Blob(fcChunks,{type:'audio/webm'}));const p=document.getElementById('fc-rec-panel');if(p)p.innerHTML=`<audio class="playback" controls src="${url}" style="margin-top:8px"></audio>`;showToast('✅ Recorded!');};
+    fcMR.start();fcRecOn=true;const b=document.getElementById('fc-rec');if(b){b.classList.add('recording');b.textContent='⏹ Stop';}showToast('🔴 Recording…');
+  }).catch(()=>showToast('⚠️ Mic denied.'));
+}
+
+// ── QUIZ ──
+// Questions are pre-built once per session and stored, so ← → navigation works
+// and answered state is preserved when going back.
+let quizQuestions = [];  // [{q, answered, chosen}]
+
+function buildQuizQuestion(card) {
+  const reversed = card.type === 'word' && Math.random() < 0.5;
+  const validEntries = state.archive.filter(e => e && e.lesson && e.lesson.word && e.lesson.sentence);
+
+  if (!reversed) {
+    // FORWARD: Kannada shown → pick correct English meaning
+    const correct = card.data.meaning;
+    const pool = [...new Set(
+      validEntries.flatMap(e => [e.lesson.word.meaning, e.lesson.sentence.meaning])
+    )].filter(m => m !== correct);
+    shuffle(pool);
+    const options = [correct, ...pool.slice(0,3)].map(o => ({ display: o, value: o, roman: null }));
+    shuffle(options);
+    return {
+      reversed: false,
+      type: card.type,
+      day: card.day,
+      question: card.type==='word' ? 'What is the meaning of this Kannada word?' : 'What does this Kannada sentence mean?',
+      promptKannada: card.data.kannada,
+      promptRoman: card.data.transliteration,
+      correct: correct,          // the value to match
+      options                    // [{display, value, roman}]
+    };
+  } else {
+    // REVERSED: English meaning shown → pick correct Kannada word
+    // Include transliteration for every option
+    const correctKn = card.data.kannada;
+    const correctRom = card.data.transliteration;
+    const pool = validEntries
+      .map(e => ({ kn: e.lesson.word.kannada, rom: e.lesson.word.transliteration }))
+      .filter(o => o.kn !== correctKn);
+    // deduplicate by kn
+    const seen = new Set();
+    const uniquePool = pool.filter(o => { if(seen.has(o.kn)) return false; seen.add(o.kn); return true; });
+    shuffle(uniquePool);
+    const options = [
+      { display: correctKn, value: correctKn, roman: correctRom },
+      ...uniquePool.slice(0,3).map(o => ({ display: o.kn, value: o.kn, roman: o.rom }))
+    ];
+    shuffle(options);
+    return {
+      reversed: true,
+      type: card.type,
+      day: card.day,
+      question: 'Which Kannada word matches this meaning?',
+      promptEnglish: card.data.meaning,
+      promptHint: card.data.example || '',
+      correct: correctKn,
+      options
+    };
+  }
+}
+
+function showQuiz() {
+  const total = quizQuestions.length;
+
+  if (total === 0) {
+    document.getElementById('revision-area').innerHTML = '<div class="error-state">No questions built yet.</div>';
+    return;
+  }
+
+  if (revIdx >= total) {
+    const pct = quizTotal > 0 ? Math.round((quizScore/quizTotal)*100) : 0;
+    const emoji = pct>=80?'🎉':pct>=60?'👍':'💪';
+    const msg = pct>=80?'Excellent!':pct>=60?'Good job!':'Keep practising!';
+    document.getElementById('revision-area').innerHTML = `
+      <div class="quiz-score">
+        <div style="font-size:2.8rem;margin-bottom:10px">${emoji}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--mud);margin-bottom:8px">Quiz Complete!</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--saffron-dark);margin-bottom:4px">${quizScore}/${quizTotal}</div>
+        <div style="font-size:.95rem;color:var(--text-light);margin-bottom:18px">${pct}% correct — ${msg}</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="startRevision()">🔄 New Quiz</button>
+          <button class="btn btn-secondary" onclick="revIdx=0;quizScore=0;quizTotal=0;renderQuizQuestion()">↩ Retry Same</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const total = quizQuestions.length;
+  if (revIdx < 0) revIdx = 0;
+  if (revIdx >= total) { showQuiz(); return; }
+
+  const entry = quizQuestions[revIdx];
+  const q = entry.q;
+  const prevDisabled = revIdx === 0 ? 'disabled' : '';
+  const nextLabel = revIdx === total - 1 ? 'See Results →' : 'Next →';
+
+  // Build prompt block
+  let promptHTML = '';
+  let hearHTML = '';
+  if (!q.reversed) {
+    const ldObj = JSON.stringify({kannada: q.promptKannada, transliteration: q.promptRoman}).replace(/"/g,'&quot;');
+    promptHTML = `<div class="quiz-kn">${q.promptKannada}</div><div class="quiz-sub">${q.promptRoman}</div>`;
+    hearHTML = `<div style="margin:10px 0 14px"><button class="speak-btn" style="font-size:.76rem;padding:7px 12px" onclick='speak(${ldObj},this)'>🔊 Hear</button></div>`;
+  } else {
+    promptHTML = `<div class="quiz-kn" style="font-size:1.3rem;color:var(--mud);line-height:1.4">"${q.promptEnglish}"</div>`;
+    hearHTML = q.promptHint ? `<div style="margin-bottom:14px;font-size:.8rem;color:var(--text-light);font-style:italic">💡 ${q.promptHint}</div>` : '<div style="margin-bottom:14px"></div>';
+  }
+
+  const qId = 'q' + revIdx;
+  const isAnswered = entry.answered;
+
+  // Build option buttons — show transliteration below Kannada options in reversed mode
+  const optButtons = q.options.map(opt => {
+    const isCorrect = opt.value === q.correct;
+    const isChosen = isAnswered && opt.value === entry.chosen;
+    let cls = 'quiz-opt';
+    if (isAnswered) {
+      cls += isCorrect ? ' correct' : (isChosen ? ' wrong' : '');
+    }
+    const disabled = isAnswered ? 'disabled' : '';
+    const innerHTML = opt.roman
+      ? `<span style="font-size:1rem;display:block">${opt.display}</span><span style="font-size:.72rem;font-style:italic;color:var(--mud-light);font-weight:400">${opt.roman}</span>`
+      : opt.display;
+    return `<button class="quiz-opt ${cls}" data-val="${escQ(opt.value)}" onclick="checkAnswer(this,'${qId}')" ${disabled}>${innerHTML}</button>`;
+  }).join('');
+
+  // Result message if already answered
+  let resultHTML = '';
+  if (isAnswered) {
+    const correct = entry.chosen === q.correct;
+    resultHTML = `<div class="quiz-result show ${correct?'correct':'wrong'}">${correct ? '✓ Correct! Well done!' : '✗ Not quite — the correct answer is highlighted in green above'}</div>`;
+  }
+
+  document.getElementById('revision-area').innerHTML = `
+    <div class="quiz-card" id="${qId}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="fc-counter" style="font-size:.68rem">Question ${revIdx+1} of ${total}</span>
+        <span style="font-size:.7rem;font-weight:700;color:${q.reversed?'var(--leaf)':'var(--terracotta)'};background:${q.reversed?'rgba(107,142,78,.1)':'rgba(193,81,58,.08)'};padding:3px 9px;border-radius:12px">
+          ${q.type==='word'?'🌟 Word':'💬 Sentence'}${q.reversed?' · 🔄 Reversed':''}
+        </span>
+      </div>
+      <div class="quiz-q">${q.question}</div>
+      ${promptHTML}
+      ${hearHTML}
+      <div class="quiz-options" id="qopts-${qId}">${optButtons}</div>
+      ${resultHTML}
+
+      <!-- Navigation arrows — always visible -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;">
+        <button class="nav-arrow" ${prevDisabled} onclick="quizPrev()" title="Previous question">←</button>
+        <div style="display:flex;gap:5px;align-items:center;">
+          ${Array.from({length:Math.min(total,10)}, (_,i) => {
+            const dotIdx = total <= 10 ? i : Math.round(i*(total-1)/9);
+            const isCur = total <= 10 ? i === revIdx : (revIdx >= Math.round(i*(total-1)/9) && (i===9 || revIdx < Math.round((i+1)*(total-1)/9)));
+            const isDone = quizQuestions[dotIdx]?.answered;
+            const bg = isCur ? 'var(--saffron)' : isDone ? 'var(--leaf)' : 'var(--sand-dark)';
+            return `<div style="width:8px;height:8px;border-radius:50%;background:${bg};transition:background .2s;"></div>`;
+          }).join('')}
+        </div>
+        <button class="nav-arrow" onclick="quizNext()" title="Next question">${revIdx===total-1?'✓':'→'}</button>
+      </div>
+    </div>`;
+
+  document.getElementById(qId).__correct = q.correct;
+}
+
+function quizNext() {
+  revIdx++;
+  if (revIdx >= quizQuestions.length) showQuiz();
+  else renderQuizQuestion();
+}
+
+function quizPrev() {
+  if (revIdx > 0) { revIdx--; renderQuizQuestion(); }
+}
+
+
+function escQ(s){ return (s||'').replace(/'/g,"\'").replace(/"/g,'&quot;'); }
+
+function checkAnswer(clickedBtn, qId) {
+  const container = document.getElementById(qId);
+  if (!container || container.__answered) return;
+  container.__answered = true;
+
+  const correct = container.__correct;
+  const chosen = clickedBtn.getAttribute('data-val');
+
+  // Save on the quizQuestions entry so navigating back re-renders correctly
+  if (quizQuestions[revIdx]) {
+    quizQuestions[revIdx].answered = true;
+    quizQuestions[revIdx].chosen = chosen;
+    if (chosen === correct) quizScore++;
+    quizTotal++;
+  }
+
+  // Re-render with answered state (avoids manipulating DOM manually)
+  renderQuizQuestion();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ARCHIVE
+// ══════════════════════════════════════════════════════════════
+function updateArchiveUI() {
+  const c = document.getElementById('archive-content');
+  if (!state.archive.length) { c.innerHTML='<p style="color:var(--text-light);font-size:.86rem;">Complete your first full lesson to start your archive.</p>'; return; }
+  const weeks = {};
+  state.archive.filter(e => e && e.lesson && e.lesson.word).forEach(e => { const k='Week '+e.week; if(!weeks[k]) weeks[k]=[]; weeks[k].push(e); });
+  let html='';
+  Object.entries(weeks).reverse().forEach(([wl,entries]) => {
+    html+=`<div class="week-hdr">📅 ${wl} <span style="font-size:.68rem;font-weight:400;color:var(--text-light)">(${entries.length} lesson${entries.length>1?'s':''})</span></div><div class="archive-grid">`;
+    entries.forEach(entry=>{
+      const w=entry.lesson.word, ti=TOPICS.indexOf(entry.lesson.topic), tc=TOPIC_TAGS[Math.max(ti,0)];
+      const idx=state.archive.indexOf(entry);
+      html+=`<div class="archive-card" onclick="openDetail(${idx})"><div class="arc-date">Day ${entry.day} · ${entry.date}</div><div class="arc-word">${w.kannada}</div><div class="arc-meaning">${w.meaning}</div><span class="topic-tag tag-${tc}">${entry.lesson.topic}</span></div>`;
+    });
+    html+='</div>';
+  });
+  c.innerHTML=html;
+}
+
+function openDetail(idx) {
+  const entry = state.archive[idx];
+  if(!entry || !entry.lesson || !entry.lesson.word) return;
+  const {word:w, sentence:s, roleplay:r} = entry.lesson;
+  const wld=JSON.stringify({kannada:w.kannada,transliteration:w.transliteration}).replace(/"/g,'&quot;');
+  const sld=JSON.stringify({kannada:s.kannada,transliteration:s.transliteration}).replace(/"/g,'&quot;');
+  document.getElementById('modal-body').innerHTML=`
+    <h2 style="font-family:'Playfair Display',serif;color:var(--mud);margin-bottom:3px">Day ${entry.day}</h2>
+    <p style="color:var(--text-light);font-size:.76rem;margin-bottom:14px">${entry.date} · ${entry.lesson.topic}</p>
+    <div class="divider"></div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:7px">🌟 Word</div>
+      <div class="word-big" style="font-size:2.2rem">${w.kannada}</div>
+      <div class="word-roman">${w.transliteration}</div>
+      <div class="word-eng"><strong>${w.meaning}</strong> · ${w.partOfSpeech}</div>
+      <button class="speak-btn" style="margin-top:9px;font-size:.74rem;padding:7px 12px" onclick='speak(${wld},this)'>🔊 Hear</button>
+    </div>
+    <div class="divider"></div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:7px">💬 Sentence</div>
+      <div class="sent-block"><div class="sent-kn">${s.kannada}</div><div class="sent-roman">${s.transliteration}</div><div class="sent-eng">${s.meaning}</div></div>
+      ${s.breakdown ? `<div class="tip-box" style="margin-top:9px">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>` : ''}
+      ${s.breakdownHindi ? `<div class="tip-box" style="margin-top:9px">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}
+      <button class="speak-btn" style="margin-top:9px;font-size:.74rem;padding:7px 12px" onclick='speak(${sld},this)'>🔊 Hear</button>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:10px">🎭 Role Play · ${r.scenario}</div>
+      ${r.lines.map(line=>{const iy=line.speaker==='YOU';return`<div class="chat-bubble ${iy?'you':''}"><div class="avatar ${iy?'you':'npc'}">${iy?'🧑':'🏪'}</div><div class="bubble-inner"><div class="bubble-name">${iy?'You':r.npcName}</div><div class="bubble-text ${iy?'you':'npc'}"><div class="bubble-kn">${line.kannada}</div><div class="bubble-roman">${line.transliteration}</div><div class="bubble-eng">${line.english}</div></div></div></div>`;}).join('')}
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+// Unique practiced words from completed (archived) lessons, deduped by Kannada text.
+function getPracticedWords() {
+  const valid = state.archive.filter(e => e && e.lesson && e.lesson.word && e.lesson.word.kannada);
+  const seen = new Set();
+  const words = [];
+  valid.forEach(e => {
+    const w = e.lesson.word;
+    if (!seen.has(w.kannada)) { seen.add(w.kannada); words.push({ w, day: e.day, topic: e.lesson.topic }); }
+  });
+  return words;
+}
+
+function showWordsList() {
+  const words = getPracticedWords();
+
+  let body = `<h2 style="font-family:'Playfair Display',serif;color:var(--mud);margin-bottom:3px">📚 Practiced Words</h2>
+    <p style="color:var(--text-light);font-size:.78rem;margin-bottom:14px">${words.length} unique word${words.length===1?'':'s'} learned</p>`;
+
+  if (!words.length) {
+    body += `<p style="color:var(--text-light);font-size:.88rem;">Complete a full lesson to start building your word list.</p>`;
+  } else {
+    body += `<div style="display:flex;flex-direction:column;gap:10px;">` + words.map(({w}) => {
+      const wld = JSON.stringify({kannada:w.kannada,transliteration:w.transliteration}).replace(/"/g,'&quot;');
+      return `<div style="background:rgba(232,213,176,.22);border:1px solid rgba(201,180,138,.45);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div class="arc-word">${w.kannada}</div>
+          <div class="word-roman" style="font-size:.92rem;margin:2px 0">${w.transliteration}</div>
+          <div class="word-eng" style="font-size:.85rem"><strong>${w.meaning}</strong>${w.partOfSpeech?` · ${w.partOfSpeech}`:''}</div>
+        </div>
+        <button class="speak-btn" style="font-size:.74rem;padding:7px 11px;flex-shrink:0" onclick='speak(${wld},this)'>🔊</button>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e){ if(!e||e.target===document.getElementById('modal-overlay')) document.getElementById('modal-overlay').classList.remove('open'); }
+
+// ══════════════════════════════════════════════════════════════
+//  TABS / UTILS
+// ══════════════════════════════════════════════════════════════
+function switchTab(tab,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  el.classList.add('active');
+  if(tab==='archive') updateArchiveUI();
+  if(tab==='revision') updateRevStats();
+  // Focus mode on Today and Revision, full chrome on Archive
+  setFocusMode(tab === 'today' || tab === 'revision');
+  // Hide floating menu btn on revision (no lesson cards there)
+  document.getElementById('focus-menu-btn').classList.toggle('visible', tab === 'today');
+}
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
+
+let toastT;
+function showToast(msg){ const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3200); }
+
+// ══════════════════════════════════════════════════════════════
+//  THEME PICKER
+// ══════════════════════════════════════════════════════════════
+function loadWithTheme() {
+  const sel = document.getElementById('theme-select').value;
+  const chosenTopic = sel === 'random' ? null : sel;
+
+  // Preserve the current lesson only if it's complete — incomplete lessons are not
+  // archived. archiveToday() dedupes on sessionId, so it won't create a duplicate.
+  if (state.todayData && state.done.word && state.done.sentence && state.done.roleplay) archiveToday();
+
+  // Hide welcome card, show lesson structure
+  document.getElementById('welcome-card').style.display = 'none';
+  document.getElementById('step-indicator').style.display = '';
+
+  // Reset today's content (but keep archive intact)
+  state.done = { word:false, sentence:false, roleplay:false };
+  state.todayData = null;
+  document.getElementById('practice-area').innerHTML = '';
+  ['word-body','sentence-body','roleplay-body'].forEach(id =>
+    document.getElementById(id).innerHTML = `<div class="loading-state">Loading…<div class="loading-dots"><span></span><span></span><span></span></div></div>`
+  );
+  ['word-controls','sentence-controls','roleplay-controls'].forEach(id =>
+    document.getElementById(id).style.display = 'none'
+  );
+  ['cbtn-word','cbtn-sentence','cbtn-roleplay'].forEach((id,i) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.className = 'complete-btn todo';
+    btn.textContent = i < 2 ? '✓ Mark Complete & Continue →' : '✓ Mark Complete — Lesson Done! 🎉';
+  });
+  ['rec-panel-word','rec-panel-sentence','rec-panel-roleplay'].forEach(id =>
+    document.getElementById(id).innerHTML = ''
+  );
+  saveState();
+  setFocusMode(true);
+  goStep(0);
+  fetchLessonWithTopic(chosenTopic);
+  showToast(chosenTopic ? `📚 Loading lesson on: ${chosenTopic}` : '🎲 Loading a random lesson…');
+}
+
+async function fetchLessonWithTopic(forceTopic) {
+  // Re-read apiKey at call time in case it was just saved
+  apiKey = store.getItem('kk_apikey') || apiKey;
+  if (!apiKey) {
+    showApiGate();
+    showToast('⚠️ Enter your API key to start');
+    return;
+  }
+  const topic = forceTopic || TOPICS[Math.floor(Math.random() * TOPICS.length)];
+  // Tell the model which words are already learned so it never repeats one (cap to bound prompt size).
+  const learned = getPracticedWords().map(({w}) => `${w.kannada} (${w.meaning})`).slice(-100);
+  const avoidClause = learned.length
+    ? ` The learner has ALREADY learned these words, so the word of the day MUST be a brand-new word that is NOT in this list: ${learned.join('; ')}.`
+    : '';
+  const prompt = `You are a Kannada teacher for an absolute beginner (level ${state.level}/10, day ${state.day}). Topic: "${topic}".${avoidClause}
+Return ONLY valid JSON (no markdown):
+{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","meaning":"English","partOfSpeech":"noun/verb/etc","example":"fun practical tip"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","meaning":"English translation","breakdown":"word by word breakdown in English","breakdownHindi":"word by word breakdown in Hindi (Devanagari script)"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","english":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","english":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","english":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","english":"..."}]}}
+Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. ONLY JSON.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1400,messages:[{role:'user',content:prompt}]})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const lesson = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    lesson.sessionId = Date.now() + '-' + Math.floor(Math.random()*1e6); // unique id so every session archives separately
+    state.todayData = lesson;
+    saveState();
+    renderAll(lesson);
+  } catch(e) {
+    ['word-body','sentence-body','roleplay-body'].forEach(id =>
+      document.getElementById(id).innerHTML = `<div class="error-state">⚠️ ${e.message}. Check your API key and refresh.</div>`
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ASK A QUESTION
+// ══════════════════════════════════════════════════════════════
+function toggleAskPanel() {
+  const btn = document.getElementById('ask-toggle-btn');
+  const body = document.getElementById('ask-body');
+  const isOpen = body.classList.contains('open');
+  const opening = !isOpen;
+  body.classList.toggle('open', opening);
+  btn.classList.toggle('open', opening);
+  setMainContentVisible(!opening);
+}
+
+function setMainContentVisible(visible) {
+  // Hide/show everything except the ask panel and header title
+  const els = ['chrome-stats', 'panel-today', 'panel-revision', 'panel-archive',
+               'chrome-nav', 'chrome-reset', 'chrome-badge',
+               'focus-exit-btn'];
+  els.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.visibility = visible ? '' : 'hidden';
+  });
+}
+
+// Close ask panel when clicking outside it
+document.addEventListener('click', function(e) {
+  const panel = document.querySelector('.ask-panel');
+  const body = document.getElementById('ask-body');
+  if (panel && !panel.contains(e.target) && body?.classList.contains('open')) {
+    body.classList.remove('open');
+    document.getElementById('ask-toggle-btn')?.classList.remove('open');
+    setMainContentVisible(true);
+  }
+});
+
+function setAskQ(text) {
+  document.getElementById('ask-input').value = text;
+  document.getElementById('ask-input').focus();
+}
+
+async function submitAsk() {
+  const input = document.getElementById('ask-input');
+  const q = input.value.trim();
+  if (!q) return;
+  if (!apiKey) { showApiGate(); showToast('⚠️ Please enter your API key first'); return; }
+
+  const btn = document.getElementById('ask-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  const area = document.getElementById('ask-answer-area');
+  area.innerHTML = `<div class="ask-loading"><div class="loading-dots"><span></span><span></span><span></span></div> Thinking…</div>`;
+
+  const prompt = `You are a Kannada language teacher. Answer the student's question directly and crisply. No greetings, no praise, no filler phrases like "good question" or "certainly".
+
+Rules:
+- Always use the respectful/formal form (ನೀವು / -ರಿ ending) as the primary answer
+- Only add a brief "Note:" if there is a meaningfully different informal version (ನೀನು / -u ending) — skip the note if the difference is trivial
+- Format: [KN: Kannada script] [ROM: syllable-hyphenated transliteration] [ENG: English meaning]
+- If the question asks how to say something, give the full phrase
+- Max 60 words total
+- Use everyday Bangalore Kannada
+
+Student's question: "${q}"`;
+
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const raw = data.content[0].text;
+
+    // Format the response — highlight KN/ROM/ENG markers
+    const formatted = raw
+      .replace(/\[KN:\s*(.*?)\]/g, '<span class="kn">$1</span>')
+      .replace(/\[ROM:\s*(.*?)\]/g, '<span class="rom">$1</span>')
+      .replace(/\[ENG:\s*(.*?)\]/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+
+    area.innerHTML = `
+      <div class="ask-answer">
+        <div class="ask-answer-head">💡 Answer</div>
+        <div class="ask-answer-body">${formatted}</div>
+      </div>`;
+  } catch(e) {
+    area.innerHTML = `<div class="error-state">⚠️ ${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Ask →';
+}
+
+</script>
