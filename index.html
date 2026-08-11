@@ -317,7 +317,27 @@ audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--sa
 </head>
 
 <body>
-<!-- ══ API KEY GATE — first page, shown when no key is saved ══ -->
+<!-- ══ AUTH GATE — login / sign up ══ -->
+<div class="api-gate" id="auth-gate" style="display:none;">
+  <div class="api-gate-inner">
+    <div class="gate-ornament">✦ ✦ ✦</div>
+    <h1><span>ಕನ್ನಡ ಕಲಿಯಿರಿ</span>Kannada Kaliyiri</h1>
+    <p class="gate-subtitle">Your Daily Kannada Journey</p>
+    <div class="api-box">
+      <h3 id="auth-title">🔐 Sign In</h3>
+      <p id="auth-desc">Welcome back! Sign in to continue your journey.</p>
+      <input type="email" class="api-input" id="auth-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter') submitAuth()">
+      <input type="password" class="api-input" id="auth-password" placeholder="Password (min 8 chars)" onkeydown="if(event.key==='Enter') submitAuth()">
+      <div id="auth-error" style="color:var(--terracotta);font-size:.82rem;margin-bottom:8px;display:none;"></div>
+      <button class="btn btn-primary" id="auth-submit-btn" onclick="submitAuth()">Sign In →</button>
+      <div style="margin-top:12px;">
+        <button onclick="toggleAuthMode()" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--text-light);font-family:Lato,sans-serif;text-decoration:underline;" id="auth-toggle">New here? Create an account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ API KEY GATE — shown after login if no key saved yet ══ -->
 <div class="api-gate" id="api-gate" style="display:none;">
   <div class="api-gate-inner">
     <div class="gate-ornament">✦ ✦ ✦</div>
@@ -325,7 +345,7 @@ audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--sa
     <p class="gate-subtitle">Your Daily Kannada Journey</p>
     <div class="api-box">
       <h3>🔑 Your Anthropic API Key</h3>
-      <p>Stored only in your browser — never sent anywhere else.</p>
+      <p>Stored securely on our servers, tied to your account.</p>
       <input type="password" class="api-input" id="api-key-input" placeholder="sk-ant-api03-..." onkeydown="if(event.key==='Enter') saveApiKey()">
       <button class="btn btn-primary" onclick="saveApiKey()">✓ Save & Start Learning</button>
     </div>
@@ -366,7 +386,10 @@ audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--sa
   <div class="stat-chip">🎯 Level <span class="val" id="level-val">1</span></div>
 </div>
 
-<div class="chrome-ui" id="chrome-reset" style="text-align:right;margin:-10px 0 6px;"><button onclick="resetApp()" style="background:none;border:none;cursor:pointer;font-size:.7rem;color:var(--text-light);font-family:Lato,sans-serif;">🗑 Reset app data</button></div>
+<div class="chrome-ui" id="chrome-reset" style="text-align:right;margin:-10px 0 6px;display:flex;justify-content:flex-end;gap:12px;align-items:center;">
+  <button onclick="logout()" style="background:none;border:none;cursor:pointer;font-size:.7rem;color:var(--text-light);font-family:Lato,sans-serif;">↩ Sign out</button>
+  <button onclick="resetApp()" style="background:none;border:none;cursor:pointer;font-size:.7rem;color:var(--text-light);font-family:Lato,sans-serif;">🗑 Reset app data</button>
+</div>
 <!-- Lesson complete card — shown on main menu after all 3 steps done -->
 <div id="lesson-complete-card" style="display:none;animation:fadeUp .4s ease;">
   <div style="background:linear-gradient(135deg,rgba(107,142,78,.1),rgba(232,135,58,.07));border:2px solid rgba(107,142,78,.3);border-radius:20px;padding:28px;text-align:center;">
@@ -563,101 +586,47 @@ audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--sa
 <div class="toast" id="toast"></div>
 
 <script>
-// ── COOKIE HELPERS (for API key — cookies expire by date, survive browser eviction) ──
-function setCookie(name, value, days) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Strict`;
-}
-function getCookie(name) {
-  const match = document.cookie.split('; ').find(r => r.startsWith(name + '='));
-  return match ? decodeURIComponent(match.split('=')[1]) : null;
-}
-function deleteCookie(name) {
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Strict`;
-}
-
-// ── SAFE STORAGE WRAPPER ──
-// localStorage can be blocked or non-persistent on file:// in Chromium browsers
-// (Chrome, Arc, Edge). IndexedDB DOES persist there, so we use it as a durable
-// fallback. IndexedDB is async, but the rest of the app reads storage synchronously,
-// so we keep an in-memory cache (_mem) that is hydrated from IndexedDB at startup
-// (see hydrateStore() in window.onload) and write through to IndexedDB on every save.
+// ── SERVER-BACKED STORE ──
+// In-memory cache populated from /api/state at startup. Writes are debounced
+// and pushed to the server, so they survive any browser storage eviction.
 const _mem = {};
+let _saveTimer = null;
 
-// ── IndexedDB key-value tier ──
-const IDB_NAME = 'kk_store', IDB_STORE = 'kv';
-let _idb = null;
-
-function idbOpen() {
-  return new Promise(resolve => {
-    try {
-      const req = indexedDB.open(IDB_NAME, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => resolve(null);
-    } catch(e) { resolve(null); }
-  });
-}
-
-function idbWrite(op, k, v) {
-  if (!_idb) return;
+async function pushState() {
   try {
-    const os = _idb.transaction(IDB_STORE, 'readwrite').objectStore(IDB_STORE);
-    if (op === 'put') os.put(v, k);
-    else if (op === 'delete') os.delete(k);
-    else if (op === 'clear') os.clear();
+    await fetch('/api/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(_mem)
+    });
   } catch(e) {}
 }
 
-// Load every persisted IndexedDB key into the in-memory cache so the synchronous
-// store API can serve them. Called once, awaited, before the app reads anything.
+function scheduleSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(pushState, 800);
+}
+
 async function hydrateStore() {
-  _idb = await idbOpen();
-  if (!_idb) return;
-  await new Promise(resolve => {
-    try {
-      const req = _idb.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).openCursor();
-      req.onsuccess = e => {
-        const cur = e.target.result;
-        if (cur) { if (_mem[cur.key] === undefined) _mem[cur.key] = String(cur.value); cur.continue(); }
-        else resolve();
-      };
-      req.onerror = () => resolve();
-    } catch(e) { resolve(); }
-  });
+  try {
+    const res = await fetch('/api/state');
+    if (!res.ok) return;
+    const data = await res.json();
+    Object.assign(_mem, data);
+  } catch(e) {}
 }
 
 const store = {
-  getItem(k) {
-    try { const v = localStorage.getItem(k); if (v !== null) return v; } catch(e) {}
-    if (k === 'kk_apikey') { const v = getCookie('kk_apikey'); if (v) return v; }
-    return _mem[k] ?? null;          // populated from IndexedDB during hydrateStore()
-  },
-  setItem(k, v) {
-    v = String(v);
-    _mem[k] = v;                     // always cache for this session
-    try { localStorage.setItem(k, v); } catch(e) {}
-    if (k === 'kk_apikey') setCookie('kk_apikey', v, 365); // survives browser eviction
-    idbWrite('put', k, v);          // durable fallback (persists on file:// too)
-  },
-  removeItem(k) {
-    delete _mem[k];
-    try { localStorage.removeItem(k); } catch(e) {}
-    if (k === 'kk_apikey') deleteCookie('kk_apikey');
-    idbWrite('delete', k);
-  },
-  clear() {
-    Object.keys(_mem).forEach(k => delete _mem[k]);
-    try { localStorage.clear(); } catch(e) {}
-    deleteCookie('kk_apikey');
-    idbWrite('clear');
-  }
+  getItem(k)   { return _mem[k] ?? null; },
+  setItem(k, v){ _mem[k] = String(v); scheduleSave(); },
+  removeItem(k){ delete _mem[k]; scheduleSave(); },
+  clear()      { Object.keys(_mem).forEach(k => delete _mem[k]); scheduleSave(); }
 };
 
 // ══════════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════════
-let apiKey = store.getItem('kk_apikey') || '';
+let apiKey = ''; // populated from server after auth in window.onload
 
 // Load and sanitize state — strip any corrupt/incomplete archive entries from old versions
 function loadState() {
@@ -703,13 +672,12 @@ window.onload = async () => {
     window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
   }
-  // Hydrate the in-memory cache from IndexedDB before reading any persisted values,
-  // then re-read the two values that were loaded at parse time (before hydration).
+  const meRes = await fetch('/api/me');
+  if (!meRes.ok) { showAuthGate(); return; }
   await hydrateStore();
-  apiKey = store.getItem('kk_apikey') || apiKey;
+  apiKey = store.getItem('kk_apikey') || '';
   const reloaded = loadState();
   if (reloaded) state = reloaded;
-
   initApp();
 };
 
@@ -760,6 +728,69 @@ function saveApiKey() {
   showToast('✓ API key saved!');
   checkNewDay();
   // Stay on main menu — user clicks Load Lesson when ready
+}
+
+// ── AUTH ──
+let authMode = 'login';
+
+function showAuthGate() {
+  document.getElementById('auth-gate').style.display = 'flex';
+  setTimeout(() => document.getElementById('auth-email').focus(), 50);
+}
+
+function hideAuthGate() {
+  document.getElementById('auth-gate').style.display = 'none';
+}
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  const isLogin = authMode === 'login';
+  document.getElementById('auth-title').textContent = isLogin ? '🔐 Sign In' : '✨ Create Account';
+  document.getElementById('auth-desc').textContent = isLogin ? 'Welcome back!' : 'Join to save your progress across all devices.';
+  document.getElementById('auth-submit-btn').textContent = isLogin ? 'Sign In →' : 'Create Account →';
+  document.getElementById('auth-toggle').textContent = isLogin ? 'New here? Create an account' : 'Already have an account? Sign in';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+async function submitAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  if (!email || !password) { errEl.textContent = 'Please enter email and password'; errEl.style.display = 'block'; return; }
+  const btn = document.getElementById('auth-submit-btn');
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await fetch(`/api/auth/${authMode}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Something went wrong';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = authMode === 'login' ? 'Sign In →' : 'Create Account →';
+      return;
+    }
+    hideAuthGate();
+    await hydrateStore();
+    apiKey = store.getItem('kk_apikey') || '';
+    const reloaded = loadState();
+    if (reloaded) state = reloaded;
+    if (!apiKey) { showApiGate(); } else { initApp(); }
+  } catch(e) {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Sign In →' : 'Create Account →';
+  }
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  location.reload();
 }
 
 function checkNewDay() {

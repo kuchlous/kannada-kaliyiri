@@ -1,0 +1,9 @@
+{
+  "name": "kannada-kaliyiri",
+  "version": "1.0.0",
+  "dependencies": {
+    "@vercel/kv": "^2.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
