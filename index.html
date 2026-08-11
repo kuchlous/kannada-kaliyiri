@@ -563,6 +563,19 @@ audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--sa
 <div class="toast" id="toast"></div>
 
 <script>
+// ── COOKIE HELPERS (for API key — cookies expire by date, survive browser eviction) ──
+function setCookie(name, value, days) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Strict`;
+}
+function getCookie(name) {
+  const match = document.cookie.split('; ').find(r => r.startsWith(name + '='));
+  return match ? decodeURIComponent(match.split('=')[1]) : null;
+}
+function deleteCookie(name) {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Strict`;
+}
+
 // ── SAFE STORAGE WRAPPER ──
 // localStorage can be blocked or non-persistent on file:// in Chromium browsers
 // (Chrome, Arc, Edge). IndexedDB DOES persist there, so we use it as a durable
@@ -617,22 +630,26 @@ async function hydrateStore() {
 const store = {
   getItem(k) {
     try { const v = localStorage.getItem(k); if (v !== null) return v; } catch(e) {}
+    if (k === 'kk_apikey') { const v = getCookie('kk_apikey'); if (v) return v; }
     return _mem[k] ?? null;          // populated from IndexedDB during hydrateStore()
   },
   setItem(k, v) {
     v = String(v);
     _mem[k] = v;                     // always cache for this session
     try { localStorage.setItem(k, v); } catch(e) {}
+    if (k === 'kk_apikey') setCookie('kk_apikey', v, 365); // survives browser eviction
     idbWrite('put', k, v);          // durable fallback (persists on file:// too)
   },
   removeItem(k) {
     delete _mem[k];
     try { localStorage.removeItem(k); } catch(e) {}
+    if (k === 'kk_apikey') deleteCookie('kk_apikey');
     idbWrite('delete', k);
   },
   clear() {
     Object.keys(_mem).forEach(k => delete _mem[k]);
     try { localStorage.clear(); } catch(e) {}
+    deleteCookie('kk_apikey');
     idbWrite('clear');
   }
 };
