@@ -262,7 +262,7 @@ audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--sa
 .load-btn:hover{background:var(--saffron-dark);transform:translateY(-1px);}
 
 /* ── ASK PANEL ── */
-.ask-panel{background:var(--card-bg);border:1px solid rgba(201,180,138,.4);border-radius:18px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 12px rgba(122,75,46,.08);}
+.ask-panel{background:var(--card-bg);border:1px solid rgba(201,180,138,.4);border-radius:18px;margin-bottom:16px;box-shadow:0 2px 12px rgba(122,75,46,.08);}
 .ask-toggle{width:100%;padding:14px 18px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:'Lato',sans-serif;font-size:.9rem;font-weight:700;color:var(--mud);text-align:left;}
 .ask-toggle:hover{background:rgba(232,135,58,.04);}
 .ask-toggle .chevron{font-size:.7rem;transition:transform .25s;color:var(--text-light);}
@@ -1161,53 +1161,48 @@ function loadNewDay() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  AUDIO
+//  AUDIO — Google Translate TTS via /api/tts proxy
 // ══════════════════════════════════════════════════════════════
 let speakingBtn = null;
+let _ttsAudio = null;
 
 function speak(typeOrObj, btnEl) {
-  let text, phonetic;
-  if (typeOrObj === 'word') { text = state.todayData?.word?.kannada; phonetic = state.todayData?.word?.transliteration; }
-  else if (typeOrObj === 'sentence') { text = state.todayData?.sentence?.kannada; phonetic = state.todayData?.sentence?.transliteration; }
-  else if (typeOrObj === 'roleplay') {
-    const lines = state.todayData?.roleplay?.lines || [];
-    text = lines.map(l=>l.kannada).join(' . ');
-    phonetic = lines.map(l=>l.transliteration).join(' . ');
+  let parts = [];
+  if (typeOrObj === 'word') {
+    parts = [state.todayData?.word?.kannada].filter(Boolean);
+  } else if (typeOrObj === 'sentence') {
+    parts = [state.todayData?.sentence?.kannada].filter(Boolean);
+  } else if (typeOrObj === 'roleplay') {
+    parts = (state.todayData?.roleplay?.lines || []).map(l => l.kannada).filter(Boolean);
   } else if (typeof typeOrObj === 'object') {
-    text = typeOrObj.kannada; phonetic = typeOrObj.transliteration;
-  } else { text = typeOrObj; phonetic = typeOrObj; }
+    parts = [typeOrObj.kannada].filter(Boolean);
+  } else {
+    parts = [typeOrObj].filter(Boolean);
+  }
 
-  if (!text) return;
-  if (!('speechSynthesis' in window)) { showToast('⚠️ Browser audio not available'); return; }
+  if (!parts.length) return;
 
-  window.speechSynthesis.cancel();
-  if (speakingBtn) { speakingBtn.classList.remove('speaking'); }
+  if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
+  if (speakingBtn) speakingBtn.classList.remove('speaking');
   speakingBtn = btnEl || null;
   if (btnEl) btnEl.classList.add('speaking');
 
-  const voices = window.speechSynthesis.getVoices();
-  const kv = voices.find(v => v.lang && v.lang.startsWith('kn'));
-  const speakText = kv ? text : phonetic;
-  const lang = kv ? 'kn-IN' : 'en-IN';
-  const voice = kv || voices.find(v=>v.lang==='en-IN') || voices.find(v=>v.lang.startsWith('en'));
-
-  if (!kv) showToast('🔈 Speaking phonetic guide: ' + (phonetic||'').slice(0,40));
-
-  const parts = speakText.split(/[.]/g).filter(s=>s.trim());
-  let i = 0;
-  const next = () => {
-    if (i >= parts.length) {
-      if (btnEl) btnEl.classList.remove('speaking');
-      speakingBtn = null; return;
-    }
-    const u = new SpeechSynthesisUtterance(parts[i++].trim());
-    u.lang = lang; u.rate = kv ? 0.82 : 0.72; u.pitch = 1.0;
-    if (voice) u.voice = voice;
-    u.onend = next;
-    u.onerror = () => { if(btnEl) btnEl.classList.remove('speaking'); speakingBtn=null; };
-    window.speechSynthesis.speak(u);
+  const done = () => {
+    if (btnEl) btnEl.classList.remove('speaking');
+    speakingBtn = null;
+    _ttsAudio = null;
   };
-  next();
+
+  const playNext = (idx) => {
+    if (idx >= parts.length) { done(); return; }
+    const audio = new Audio(`/api/tts?text=${encodeURIComponent(parts[idx])}`);
+    _ttsAudio = audio;
+    audio.onended = () => playNext(idx + 1);
+    audio.onerror = () => { showToast('⚠️ Audio unavailable'); done(); };
+    audio.play().catch(() => { showToast('⚠️ Audio blocked — tap to allow'); done(); });
+  };
+
+  playNext(0);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1904,15 +1899,80 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1400,messages:[{role:'user',content:prompt}]})
+      body: JSON.stringify({model:'claude-sonnet-5',max_tokens:1024,stream:true,messages:[{role:'user',content:prompt}]})
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const lesson = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
-    lesson.sessionId = Date.now() + '-' + Math.floor(Math.random()*1e6); // unique id so every session archives separately
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    let wordDone = false, sentDone = false;
+
+    const tryRenderWord = () => {
+      if (wordDone) return;
+      const m = text.match(/"word"\s*:\s*(\{[^{}]+\})/s);
+      if (!m) return;
+      try {
+        const w = JSON.parse(m[1]);
+        if (!state.todayData) state.todayData = {};
+        state.todayData.word = w; // so speak('word') works immediately
+        const ti = TOPICS.indexOf(topic), tc = TOPIC_TAGS[Math.max(ti,0)];
+        document.getElementById('word-topic').innerHTML = `<span class="topic-tag tag-${tc}">${topic}</span>`;
+        document.getElementById('word-body').innerHTML = `
+          <div class="word-big">${w.kannada}</div>
+          <div class="word-roman">${w.transliteration}</div>
+          <div class="word-eng"><strong>${w.meaning}</strong> · ${w.partOfSpeech}</div>
+          ${w.example ? `<div class="tip-box">💡 <strong>Tip:</strong> ${w.example}</div>` : ''}`;
+        document.getElementById('word-controls').style.display = 'block';
+        wordDone = true;
+      } catch(e) {}
+    };
+
+    const tryRenderSentence = () => {
+      if (sentDone || !wordDone) return;
+      const m = text.match(/"sentence"\s*:\s*(\{[^{}]+\})/s);
+      if (!m) return;
+      try {
+        const s = JSON.parse(m[1]);
+        if (!state.todayData) state.todayData = {};
+        state.todayData.sentence = s; // so speak('sentence') works immediately
+        document.getElementById('sentence-body').innerHTML = `
+          <div class="sent-block">
+            <div class="sent-kn">${s.kannada}</div>
+            <div class="sent-roman">${s.transliteration}</div>
+            <div class="sent-eng">${s.meaning}</div>
+          </div>
+          <div class="tip-box">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>
+          ${s.breakdownHindi ? `<div class="tip-box">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}`;
+        document.getElementById('sentence-controls').style.display = 'block';
+        sentDone = true;
+      } catch(e) {}
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      for (const line of decoder.decode(value, {stream:true}).split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6);
+        if (raw === '[DONE]') break;
+        try {
+          const ev = JSON.parse(raw);
+          if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+            text += ev.delta.text;
+            tryRenderWord();
+            tryRenderSentence();
+          }
+          if (ev.type === 'error') throw new Error(ev.error?.message || 'Stream error');
+        } catch(e) { if (e.message !== 'Unexpected end of JSON input') throw e; }
+      }
+    }
+
+    const lesson = JSON.parse(text.replace(/```json|```/g,'').trim());
+    lesson.sessionId = Date.now() + '-' + Math.floor(Math.random()*1e6);
     state.todayData = lesson;
     saveState();
-    renderAll(lesson);
+    renderAll(lesson); // final authoritative render
   } catch(e) {
     ['word-body','sentence-body','roleplay-body'].forEach(id =>
       document.getElementById(id).innerHTML = `<div class="error-state">⚠️ ${e.message}. Check your API key and refresh.</div>`
@@ -1990,11 +2050,12 @@ Student's question: "${q}"`;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})
+      body: JSON.stringify({model:'claude-sonnet-5',max_tokens:300,messages:[{role:'user',content:prompt}]})
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const raw = data.content[0].text;
+    if (!res.ok || data.error) throw new Error(data.error?.message || `API error ${res.status}`);
+    const raw = data.content?.find(b => b.type === 'text')?.text;
+    if (!raw) throw new Error('No text in response');
 
     // Format the response — highlight KN/ROM/ENG markers
     const formatted = raw
