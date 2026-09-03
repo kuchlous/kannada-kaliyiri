@@ -269,10 +269,7 @@ audio.playback{width:100%;margin-top:7px;border-radius:7px;accent-color:var(--sa
 .ask-toggle.open .chevron{transform:rotate(180deg);}
 .ask-body{display:none;padding:0 18px 16px;border-top:1px solid rgba(201,180,138,.25);}
 .ask-body.open{display:block;animation:fadeUp .25s ease;}
-.ask-examples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-top:12px;}
-.ask-chip{padding:5px 11px;background:rgba(232,135,58,.09);border:1px solid rgba(232,135,58,.22);border-radius:20px;font-size:.75rem;color:var(--saffron-dark);cursor:pointer;transition:all .18s;font-family:'Lato',sans-serif;}
-.ask-chip:hover{background:rgba(232,135,58,.18);}
-.ask-input-row{display:flex;gap:8px;}
+.ask-input-row{display:flex;gap:8px;padding-top:12px;}
 .ask-input{flex:1;padding:10px 14px;border:2px solid var(--sand-dark);border-radius:11px;font-family:'Lato',sans-serif;font-size:.88rem;color:var(--text-dark);background:var(--cream);outline:none;transition:border-color .2s;}
 .ask-input:focus{border-color:var(--saffron);}
 .ask-submit{padding:10px 18px;border-radius:28px;border:none;background:var(--mud);color:#fff;font-family:'Lato',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .22s;}
@@ -624,6 +621,53 @@ const store = {
 };
 
 // ══════════════════════════════════════════════════════════════
+//  ESCAPING
+// ══════════════════════════════════════════════════════════════
+// Lesson content comes back from the model as free text and is rendered with
+// innerHTML, then archived and re-rendered forever.
+//
+// Escaping happens here, at the HTML boundary — NOT where the lesson is parsed.
+// The same strings are also fed to /api/tts, spliced into the next lesson prompt,
+// and compared against quiz answers; escaping them on the way in would store
+// "What&#39;s your name?" in KV forever, mixed in with the raw entries users
+// already have. Tag a template with `html` and every ${...} in it is escaped by
+// default, so the safe thing is what you get for free.
+const ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ESC_MAP[c]);
+}
+
+// Marks a value as already-safe markup so `html` passes it through untouched.
+// Named `trusted` rather than `raw` because `raw` is already a local variable
+// name in three unrelated functions here, and the shadowing would be silent.
+// toString lets a Raw be assigned straight to .innerHTML / passed to
+// insertAdjacentHTML — both stringify their argument.
+class Raw {
+  constructor(value) { this.value = value; }
+  toString() { return this.value; }
+}
+function trusted(value) { return new Raw(value); }
+
+function resolve(v) {
+  if (v instanceof Raw) return v.value;
+  if (Array.isArray(v)) return v.map(resolve).join(''); // no .join('') at call sites
+  return esc(v);
+}
+
+// Tagged template: html`<div>${untrusted}</div>`. Returns Raw, so nesting an
+// html`` inside another html`` composes without double-escaping.
+function html(strings, ...vals) {
+  return trusted(strings.reduce((out, s, i) => out + s + (i < vals.length ? resolve(vals[i]) : ''), ''));
+}
+
+// For values passed to an inline handler in a single-quoted attribute, e.g.
+// onclick='speak(${attrJson(obj)},this)'. Escaping & first (esc does, via one
+// pass over the char class) keeps any literal entity in the data intact, and
+// escaping ' stops the JSON from closing the attribute early. Returns Raw
+// because the escaping is already done.
+function attrJson(obj) { return trusted(esc(JSON.stringify(obj))); }
+
+// ══════════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════════
 let apiKey = ''; // populated from server after auth in window.onload
@@ -650,7 +694,7 @@ function loadState() {
 }
 
 let state = loadState() || {
-  day:1, streak:0, lastDate:null, wordsLearned:0, level:1,
+  day:1, streak:0, lastDate:null, level:1,
   done:{ word:false, sentence:false, roleplay:false },
   todayData:null, archive:[]
 };
@@ -724,10 +768,12 @@ function saveApiKey() {
   if (!v.startsWith('sk-ant')) { showToast('⚠️ Enter a valid Anthropic key'); return; }
   apiKey = v;
   store.setItem('kk_apikey', apiKey);
-  hideApiGate();
   showToast('✓ API key saved!');
-  checkNewDay();
-  // Stay on main menu — user clicks Load Lesson when ready
+  // initApp() hides the gate and runs checkNewDay() itself, and — crucially —
+  // renders the main menu. Calling only hideApiGate() here left a first-time
+  // user looking at the static #step-0 placeholder ("Generating your word…"),
+  // which reads as a lesson stuck loading when nothing was ever requested.
+  initApp();
 }
 
 // ── AUTH ──
@@ -881,24 +927,10 @@ function goToMenuFromRevision() {
 }
 
 
-function exitFocusMode() {
-  setFocusMode(false);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function setCompletionMode(on) {
-  // Like focus mode but also hides the today panel and the floating menu button
-  setFocusMode(on);
-  const todayPanel = document.getElementById('panel-today');
-  if (todayPanel) todayPanel.style.display = on ? 'none' : '';
-  // Hide the floating menu button on completion screen — it has its own ← Menu
-  const menuBtn = document.getElementById('focus-menu-btn');
-  if (menuBtn) menuBtn.classList.toggle('visible', false);
-}
 const COMPLETION_HIDE = [
   'chrome-ornament','chrome-h1','chrome-subtitle','chrome-ask-wrap','chrome-badge',
   'chrome-stats','chrome-nav','chrome-reset',
-  'panel-today','panel-revision','panel-archive','focus-exit-btn'
+  'panel-today','panel-revision','panel-archive'
 ];
 
 function enterCompletionMode() {
@@ -908,17 +940,6 @@ function enterCompletionMode() {
   });
   const card = document.getElementById('lesson-complete-card');
   card.style.display = 'block';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function exitCompletionMode() {
-  COMPLETION_HIDE.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = '';
-  });
-  // Re-apply chrome-ui hidden class state from focus mode
-  setFocusMode(false);
-  document.getElementById('lesson-complete-card').style.display = 'none';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -959,30 +980,6 @@ function updateStepIndicator() {
 // ══════════════════════════════════════════════════════════════
 //  FETCH LESSON
 // ══════════════════════════════════════════════════════════════
-async function loadTodayUI() {
-  restoreCompletionUI();
-  // Only enter focus mode if lesson is not already complete
-  if (!(state.done.word && state.done.sentence && state.done.roleplay)) {
-    setFocusMode(true);
-    if (state.todayData) { renderAll(state.todayData); return; }
-    await fetchLesson();
-  }
-}
-
-function restoreCompletionUI() {
-  if (state.done.word) markBtnDone('cbtn-word', 'Word done ✓');
-  if (state.done.sentence) markBtnDone('cbtn-sentence', 'Sentence done ✓');
-  if (state.done.roleplay) markBtnDone('cbtn-roleplay', 'Role play done ✓');
-  updateStepIndicator();
-  // Never auto-show the completion card on page load — it only appears
-  // when the user completes all 3 steps in the current session (via completeStep)
-  // Hide step cards if lesson is done so today panel is clean
-  if (state.done.word && state.done.sentence && state.done.roleplay) {
-    [0,1,2].forEach(i => document.getElementById('step-'+i).style.display = 'none');
-    document.getElementById('step-indicator').style.display = 'none';
-  }
-}
-
 async function fetchLesson() {
   // Use the currently selected theme if set, otherwise rotate through topics by day
   const sel = document.getElementById('theme-select');
@@ -999,8 +996,8 @@ function renderAll(l) { renderWord(l); renderSentence(l); renderRoleplay(l); }
 function renderWord(l) {
   const w = l.word;
   const ti = TOPICS.indexOf(l.topic), tc = TOPIC_TAGS[Math.max(ti,0)];
-  document.getElementById('word-topic').innerHTML = `<span class="topic-tag tag-${tc}">${l.topic}</span>`;
-  document.getElementById('word-body').innerHTML = `
+  document.getElementById('word-topic').innerHTML = html`<span class="topic-tag tag-${tc}">${l.topic}</span>`;
+  document.getElementById('word-body').innerHTML = html`
     <div class="word-big">${w.kannada}</div>
     <div class="word-roman">${w.transliteration}</div>
     <div class="word-eng"><strong>${w.meaning}</strong> · ${w.partOfSpeech}</div>
@@ -1010,36 +1007,41 @@ function renderWord(l) {
 
 function renderSentence(l) {
   const s = l.sentence;
-  document.getElementById('sentence-body').innerHTML = `
+  document.getElementById('sentence-body').innerHTML = html`
     <div class="sent-block">
       <div class="sent-kn">${s.kannada}</div>
       <div class="sent-roman">${s.transliteration}</div>
       <div class="sent-eng">${s.meaning}</div>
     </div>
     <div class="tip-box">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>
-    ${s.breakdownHindi ? `<div class="tip-box">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}`;
+    ${s.breakdownHindi ? html`<div class="tip-box">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}`;
   document.getElementById('sentence-controls').style.display = 'block';
+}
+
+// Shared by the lesson's roleplay step and the archive detail modal.
+function roleplayBubbles(r) {
+  return r.lines.map(line => {
+    const iy = line.speaker === 'YOU';
+    return html`<div class="chat-bubble ${iy?'you':''}">
+      <div class="avatar ${iy?'you':'npc'}">${iy?'🧑':'🏪'}</div>
+      <div class="bubble-inner">
+        <div class="bubble-name">${iy?'You':r.npcName}</div>
+        <div class="bubble-text ${iy?'you':'npc'}">
+          <div class="bubble-kn">${line.kannada}</div>
+          <div class="bubble-roman">${line.transliteration}</div>
+          <div class="bubble-eng">${line.english}</div>
+        </div>
+      </div>
+    </div>`;
+  });
 }
 
 function renderRoleplay(l) {
   const r = l.roleplay;
   document.getElementById('rp-scenario-title').textContent = '🎬 ' + r.scenario;
-  document.getElementById('roleplay-body').innerHTML = `
+  document.getElementById('roleplay-body').innerHTML = html`
     <div class="rp-scene">Scenario · ${r.scenario}</div>
-    ${r.lines.map(line => {
-      const iy = line.speaker === 'YOU';
-      return `<div class="chat-bubble ${iy?'you':''}">
-        <div class="avatar ${iy?'you':'npc'}">${iy?'🧑':'🏪'}</div>
-        <div class="bubble-inner">
-          <div class="bubble-name">${iy?'You':r.npcName}</div>
-          <div class="bubble-text ${iy?'you':'npc'}">
-            <div class="bubble-kn">${line.kannada}</div>
-            <div class="bubble-roman">${line.transliteration}</div>
-            <div class="bubble-eng">${line.english}</div>
-          </div>
-        </div>
-      </div>`;
-    }).join('')}`;
+    ${roleplayBubbles(r)}`;
   document.getElementById('roleplay-controls').style.display = 'block';
 }
 
@@ -1053,7 +1055,6 @@ function completeStep(key, stepIdx) {
     return;
   }
   state.done[key] = true;
-  if (key === 'word') state.wordsLearned++;
   saveState();
   markBtnDone('cbtn-'+key, key === 'roleplay' ? 'Role play done ✓' : key.charAt(0).toUpperCase()+key.slice(1)+' done ✓');
   updateStepIndicator();
@@ -1271,7 +1272,7 @@ function openPractice() {
   if(!state.todayData) return;
   const r = state.todayData.roleplay;
   pLines=r.lines; pNpc=r.npcName; pRole=null;
-  document.getElementById('practice-area').innerHTML=`
+  document.getElementById('practice-area').innerHTML=html`
     <div class="practice-intro">
       <h4>🎮 Practice: ${r.scenario}</h4>
       <p>Pick your role — the AI speaks the other character's lines aloud. Record yours!</p>
@@ -1309,8 +1310,8 @@ function nextPrac() {
   if(aiTurn){
     const div = document.createElement('div');
     div.className='prac-turn ai-turn';
-    const ld = JSON.stringify({kannada:line.kannada,transliteration:line.transliteration}).replace(/"/g,'&quot;');
-    div.innerHTML=`<div class="turn-lbl ai">${line.speaker==='NPC'?pNpc:'You'} (AI 🔊)</div>
+    const ld = attrJson({kannada:line.kannada,transliteration:line.transliteration});
+    div.innerHTML=html`<div class="turn-lbl ai">${line.speaker==='NPC'?pNpc:'You'} (AI 🔊)</div>
       <div class="bubble-kn" style="margin-bottom:3px">${line.kannada}</div>
       <div class="bubble-roman">${line.transliteration}</div>
       <div class="bubble-eng" style="margin-top:2px">${line.english}</div>
@@ -1323,7 +1324,7 @@ function nextPrac() {
     const s=pStep;
     const div=document.createElement('div');
     div.id='pt-'+s; div.className='prac-turn your-turn active';
-    div.innerHTML=`<div class="turn-lbl you">Your turn 🎤</div>
+    div.innerHTML=html`<div class="turn-lbl you">Your turn 🎤</div>
       <div style="font-weight:700;font-size:.86rem;color:var(--mud);margin-bottom:4px">Say in Kannada:</div>
       <div class="cue-eng">"${line.english}"</div>
       <div style="display:flex;gap:7px;flex-wrap:wrap">
@@ -1442,12 +1443,11 @@ function showFlashcard() {
   const roman = card.data.transliteration;
   const answer = card.data.meaning;
   const extra = isWord ? (card.data.example || '') : (card.data.breakdown || '');
-  const ld = JSON.stringify({kannada:front, transliteration:roman}).replace(/"/g,'&quot;');
+  const ld = attrJson({kannada:front, transliteration:roman});
 
   const prevDisabled = revIdx === 0 ? 'disabled' : '';
-  const nextLabel = revIdx === total - 1 ? 'Finish ✓' : 'Next →';
 
-  document.getElementById('revision-area').innerHTML = `
+  document.getElementById('revision-area').innerHTML = html`
     <div class="flashcard">
       <div class="fc-counter">Card ${revIdx+1} of ${total}</div>
       <div class="fc-type ${card.type}">${isWord ? '🌟 Word' : '💬 Sentence'} · Day ${card.day}</div>
@@ -1473,13 +1473,12 @@ function showFlashcard() {
 
       <!-- Navigation arrows — always visible -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;">
-        <button class="nav-arrow" ${prevDisabled} onclick="fcPrev()" title="Previous card">←</button>
+        <button class="nav-arrow" ${trusted(prevDisabled)} onclick="fcPrev()" title="Previous card">←</button>
         <div style="display:flex;gap:6px;align-items:center;">
           ${Array.from({length:Math.min(total,10)}, (_,i) => {
-            const dotIdx = total <= 10 ? i : Math.round(i * (total-1) / 9);
             const isCurrent = total <= 10 ? i === revIdx : (revIdx >= Math.round(i*(total-1)/9) && (i===9 || revIdx < Math.round((i+1)*(total-1)/9)));
-            return `<div style="width:8px;height:8px;border-radius:50%;background:${isCurrent ? 'var(--saffron)' : 'var(--sand-dark)'};transition:background .2s;"></div>`;
-          }).join('')}
+            return html`<div style="width:8px;height:8px;border-radius:50%;background:${isCurrent ? 'var(--saffron)' : 'var(--sand-dark)'};transition:background .2s;"></div>`;
+          })}
         </div>
         <button class="nav-arrow" onclick="fcNext()" title="Next card">${revIdx === total-1 ? '✓' : '→'}</button>
       </div>
@@ -1616,18 +1615,17 @@ function renderQuizQuestion() {
   const entry = quizQuestions[revIdx];
   const q = entry.q;
   const prevDisabled = revIdx === 0 ? 'disabled' : '';
-  const nextLabel = revIdx === total - 1 ? 'See Results →' : 'Next →';
 
   // Build prompt block
   let promptHTML = '';
   let hearHTML = '';
   if (!q.reversed) {
-    const ldObj = JSON.stringify({kannada: q.promptKannada, transliteration: q.promptRoman}).replace(/"/g,'&quot;');
-    promptHTML = `<div class="quiz-kn">${q.promptKannada}</div><div class="quiz-sub">${q.promptRoman}</div>`;
-    hearHTML = `<div style="margin:10px 0 14px"><button class="speak-btn" style="font-size:.76rem;padding:7px 12px" onclick='speak(${ldObj},this)'>🔊 Hear</button></div>`;
+    const ldObj = attrJson({kannada: q.promptKannada, transliteration: q.promptRoman});
+    promptHTML = html`<div class="quiz-kn">${q.promptKannada}</div><div class="quiz-sub">${q.promptRoman}</div>`;
+    hearHTML = html`<div style="margin:10px 0 14px"><button class="speak-btn" style="font-size:.76rem;padding:7px 12px" onclick='speak(${ldObj},this)'>🔊 Hear</button></div>`;
   } else {
-    promptHTML = `<div class="quiz-kn" style="font-size:1.3rem;color:var(--mud);line-height:1.4">"${q.promptEnglish}"</div>`;
-    hearHTML = q.promptHint ? `<div style="margin-bottom:14px;font-size:.8rem;color:var(--text-light);font-style:italic">💡 ${q.promptHint}</div>` : '<div style="margin-bottom:14px"></div>';
+    promptHTML = html`<div class="quiz-kn" style="font-size:1.3rem;color:var(--mud);line-height:1.4">"${q.promptEnglish}"</div>`;
+    hearHTML = q.promptHint ? html`<div style="margin-bottom:14px;font-size:.8rem;color:var(--text-light);font-style:italic">💡 ${q.promptHint}</div>` : trusted('<div style="margin-bottom:14px"></div>');
   }
 
   const qId = 'q' + revIdx;
@@ -1642,20 +1640,20 @@ function renderQuizQuestion() {
       cls += isCorrect ? ' correct' : (isChosen ? ' wrong' : '');
     }
     const disabled = isAnswered ? 'disabled' : '';
-    const innerHTML = opt.roman
-      ? `<span style="font-size:1rem;display:block">${opt.display}</span><span style="font-size:.72rem;font-style:italic;color:var(--mud-light);font-weight:400">${opt.roman}</span>`
+    const label = opt.roman
+      ? html`<span style="font-size:1rem;display:block">${opt.display}</span><span style="font-size:.72rem;font-style:italic;color:var(--mud-light);font-weight:400">${opt.roman}</span>`
       : opt.display;
-    return `<button class="quiz-opt ${cls}" data-val="${escQ(opt.value)}" onclick="checkAnswer(this,'${qId}')" ${disabled}>${innerHTML}</button>`;
-  }).join('');
+    return html`<button class="quiz-opt ${cls}" data-val="${opt.value}" onclick="checkAnswer(this,'${qId}')" ${trusted(disabled)}>${label}</button>`;
+  });
 
   // Result message if already answered
   let resultHTML = '';
   if (isAnswered) {
     const correct = entry.chosen === q.correct;
-    resultHTML = `<div class="quiz-result show ${correct?'correct':'wrong'}">${correct ? '✓ Correct! Well done!' : '✗ Not quite — the correct answer is highlighted in green above'}</div>`;
+    resultHTML = html`<div class="quiz-result show ${correct?'correct':'wrong'}">${correct ? '✓ Correct! Well done!' : '✗ Not quite — the correct answer is highlighted in green above'}</div>`;
   }
 
-  document.getElementById('revision-area').innerHTML = `
+  document.getElementById('revision-area').innerHTML = html`
     <div class="quiz-card" id="${qId}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <span class="fc-counter" style="font-size:.68rem">Question ${revIdx+1} of ${total}</span>
@@ -1671,15 +1669,15 @@ function renderQuizQuestion() {
 
       <!-- Navigation arrows — always visible -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;">
-        <button class="nav-arrow" ${prevDisabled} onclick="quizPrev()" title="Previous question">←</button>
+        <button class="nav-arrow" ${trusted(prevDisabled)} onclick="quizPrev()" title="Previous question">←</button>
         <div style="display:flex;gap:5px;align-items:center;">
           ${Array.from({length:Math.min(total,10)}, (_,i) => {
             const dotIdx = total <= 10 ? i : Math.round(i*(total-1)/9);
             const isCur = total <= 10 ? i === revIdx : (revIdx >= Math.round(i*(total-1)/9) && (i===9 || revIdx < Math.round((i+1)*(total-1)/9)));
             const isDone = quizQuestions[dotIdx]?.answered;
             const bg = isCur ? 'var(--saffron)' : isDone ? 'var(--leaf)' : 'var(--sand-dark)';
-            return `<div style="width:8px;height:8px;border-radius:50%;background:${bg};transition:background .2s;"></div>`;
-          }).join('')}
+            return html`<div style="width:8px;height:8px;border-radius:50%;background:${bg};transition:background .2s;"></div>`;
+          })}
         </div>
         <button class="nav-arrow" onclick="quizNext()" title="Next question">${revIdx===total-1?'✓':'→'}</button>
       </div>
@@ -1698,8 +1696,6 @@ function quizPrev() {
   if (revIdx > 0) { revIdx--; renderQuizQuestion(); }
 }
 
-
-function escQ(s){ return (s||'').replace(/'/g,"\'").replace(/"/g,'&quot;'); }
 
 function checkAnswer(clickedBtn, qId) {
   const container = document.getElementById(qId);
@@ -1729,26 +1725,23 @@ function updateArchiveUI() {
   if (!state.archive.length) { c.innerHTML='<p style="color:var(--text-light);font-size:.86rem;">Complete your first full lesson to start your archive.</p>'; return; }
   const weeks = {};
   state.archive.filter(e => e && e.lesson && e.lesson.word).forEach(e => { const k='Week '+e.week; if(!weeks[k]) weeks[k]=[]; weeks[k].push(e); });
-  let html='';
-  Object.entries(weeks).reverse().forEach(([wl,entries]) => {
-    html+=`<div class="week-hdr">📅 ${wl} <span style="font-size:.68rem;font-weight:400;color:var(--text-light)">(${entries.length} lesson${entries.length>1?'s':''})</span></div><div class="archive-grid">`;
-    entries.forEach(entry=>{
+  const out = Object.entries(weeks).reverse().map(([wl,entries]) => html`
+    <div class="week-hdr">📅 ${wl} <span style="font-size:.68rem;font-weight:400;color:var(--text-light)">(${entries.length} lesson${entries.length>1?'s':''})</span></div>
+    <div class="archive-grid">${entries.map(entry=>{
       const w=entry.lesson.word, ti=TOPICS.indexOf(entry.lesson.topic), tc=TOPIC_TAGS[Math.max(ti,0)];
       const idx=state.archive.indexOf(entry);
-      html+=`<div class="archive-card" onclick="openDetail(${idx})"><div class="arc-date">Day ${entry.day} · ${entry.date}</div><div class="arc-word">${w.kannada}</div><div class="arc-meaning">${w.meaning}</div><span class="topic-tag tag-${tc}">${entry.lesson.topic}</span></div>`;
-    });
-    html+='</div>';
-  });
-  c.innerHTML=html;
+      return html`<div class="archive-card" onclick="openDetail(${idx})"><div class="arc-date">Day ${entry.day} · ${entry.date}</div><div class="arc-word">${w.kannada}</div><div class="arc-meaning">${w.meaning}</div><span class="topic-tag tag-${tc}">${entry.lesson.topic}</span></div>`;
+    })}</div>`);
+  c.innerHTML = resolve(out);
 }
 
 function openDetail(idx) {
   const entry = state.archive[idx];
   if(!entry || !entry.lesson || !entry.lesson.word) return;
   const {word:w, sentence:s, roleplay:r} = entry.lesson;
-  const wld=JSON.stringify({kannada:w.kannada,transliteration:w.transliteration}).replace(/"/g,'&quot;');
-  const sld=JSON.stringify({kannada:s.kannada,transliteration:s.transliteration}).replace(/"/g,'&quot;');
-  document.getElementById('modal-body').innerHTML=`
+  const wld=attrJson({kannada:w.kannada,transliteration:w.transliteration});
+  const sld=attrJson({kannada:s.kannada,transliteration:s.transliteration});
+  document.getElementById('modal-body').innerHTML=html`
     <h2 style="font-family:'Playfair Display',serif;color:var(--mud);margin-bottom:3px">Day ${entry.day}</h2>
     <p style="color:var(--text-light);font-size:.76rem;margin-bottom:14px">${entry.date} · ${entry.lesson.topic}</p>
     <div class="divider"></div>
@@ -1763,14 +1756,14 @@ function openDetail(idx) {
     <div style="margin-bottom:14px">
       <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:7px">💬 Sentence</div>
       <div class="sent-block"><div class="sent-kn">${s.kannada}</div><div class="sent-roman">${s.transliteration}</div><div class="sent-eng">${s.meaning}</div></div>
-      ${s.breakdown ? `<div class="tip-box" style="margin-top:9px">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>` : ''}
-      ${s.breakdownHindi ? `<div class="tip-box" style="margin-top:9px">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}
+      ${s.breakdown ? html`<div class="tip-box" style="margin-top:9px">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>` : ''}
+      ${s.breakdownHindi ? html`<div class="tip-box" style="margin-top:9px">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}
       <button class="speak-btn" style="margin-top:9px;font-size:.74rem;padding:7px 12px" onclick='speak(${sld},this)'>🔊 Hear</button>
     </div>
     <div class="divider"></div>
     <div>
       <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:10px">🎭 Role Play · ${r.scenario}</div>
-      ${r.lines.map(line=>{const iy=line.speaker==='YOU';return`<div class="chat-bubble ${iy?'you':''}"><div class="avatar ${iy?'you':'npc'}">${iy?'🧑':'🏪'}</div><div class="bubble-inner"><div class="bubble-name">${iy?'You':r.npcName}</div><div class="bubble-text ${iy?'you':'npc'}"><div class="bubble-kn">${line.kannada}</div><div class="bubble-roman">${line.transliteration}</div><div class="bubble-eng">${line.english}</div></div></div></div>`;}).join('')}
+      ${roleplayBubbles(r)}
     </div>`;
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -1790,24 +1783,22 @@ function getPracticedWords() {
 function showWordsList() {
   const words = getPracticedWords();
 
-  let body = `<h2 style="font-family:'Playfair Display',serif;color:var(--mud);margin-bottom:3px">📚 Practiced Words</h2>
-    <p style="color:var(--text-light);font-size:.78rem;margin-bottom:14px">${words.length} unique word${words.length===1?'':'s'} learned</p>`;
-
-  if (!words.length) {
-    body += `<p style="color:var(--text-light);font-size:.88rem;">Complete a full lesson to start building your word list.</p>`;
-  } else {
-    body += `<div style="display:flex;flex-direction:column;gap:10px;">` + words.map(({w}) => {
-      const wld = JSON.stringify({kannada:w.kannada,transliteration:w.transliteration}).replace(/"/g,'&quot;');
-      return `<div style="background:rgba(232,213,176,.22);border:1px solid rgba(201,180,138,.45);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
-        <div style="flex:1;min-width:0;">
-          <div class="arc-word">${w.kannada}</div>
-          <div class="word-roman" style="font-size:.92rem;margin:2px 0">${w.transliteration}</div>
-          <div class="word-eng" style="font-size:.85rem"><strong>${w.meaning}</strong>${w.partOfSpeech?` · ${w.partOfSpeech}`:''}</div>
-        </div>
-        <button class="speak-btn" style="font-size:.74rem;padding:7px 11px;flex-shrink:0" onclick='speak(${wld},this)'>🔊</button>
-      </div>`;
-    }).join('') + `</div>`;
-  }
+  const body = html`
+    <h2 style="font-family:'Playfair Display',serif;color:var(--mud);margin-bottom:3px">📚 Practiced Words</h2>
+    <p style="color:var(--text-light);font-size:.78rem;margin-bottom:14px">${words.length} unique word${words.length===1?'':'s'} learned</p>
+    ${!words.length
+      ? html`<p style="color:var(--text-light);font-size:.88rem;">Complete a full lesson to start building your word list.</p>`
+      : html`<div style="display:flex;flex-direction:column;gap:10px;">${words.map(({w}) => {
+          const wld = attrJson({kannada:w.kannada,transliteration:w.transliteration});
+          return html`<div style="background:rgba(232,213,176,.22);border:1px solid rgba(201,180,138,.45);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+            <div style="flex:1;min-width:0;">
+              <div class="arc-word">${w.kannada}</div>
+              <div class="word-roman" style="font-size:.92rem;margin:2px 0">${w.transliteration}</div>
+              <div class="word-eng" style="font-size:.85rem"><strong>${w.meaning}</strong>${w.partOfSpeech ? html` · ${w.partOfSpeech}` : ''}</div>
+            </div>
+            <button class="speak-btn" style="font-size:.74rem;padding:7px 11px;flex-shrink:0" onclick='speak(${wld},this)'>🔊</button>
+          </div>`;
+        })}</div>`}`;
   document.getElementById('modal-body').innerHTML = body;
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -1917,12 +1908,12 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
         if (!state.todayData) state.todayData = {};
         state.todayData.word = w; // so speak('word') works immediately
         const ti = TOPICS.indexOf(topic), tc = TOPIC_TAGS[Math.max(ti,0)];
-        document.getElementById('word-topic').innerHTML = `<span class="topic-tag tag-${tc}">${topic}</span>`;
-        document.getElementById('word-body').innerHTML = `
+        document.getElementById('word-topic').innerHTML = html`<span class="topic-tag tag-${tc}">${topic}</span>`;
+        document.getElementById('word-body').innerHTML = html`
           <div class="word-big">${w.kannada}</div>
           <div class="word-roman">${w.transliteration}</div>
           <div class="word-eng"><strong>${w.meaning}</strong> · ${w.partOfSpeech}</div>
-          ${w.example ? `<div class="tip-box">💡 <strong>Tip:</strong> ${w.example}</div>` : ''}`;
+          ${w.example ? html`<div class="tip-box">💡 <strong>Tip:</strong> ${w.example}</div>` : ''}`;
         document.getElementById('word-controls').style.display = 'block';
         wordDone = true;
       } catch(e) {}
@@ -1936,14 +1927,14 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
         const s = JSON.parse(m[1]);
         if (!state.todayData) state.todayData = {};
         state.todayData.sentence = s; // so speak('sentence') works immediately
-        document.getElementById('sentence-body').innerHTML = `
+        document.getElementById('sentence-body').innerHTML = html`
           <div class="sent-block">
             <div class="sent-kn">${s.kannada}</div>
             <div class="sent-roman">${s.transliteration}</div>
             <div class="sent-eng">${s.meaning}</div>
           </div>
           <div class="tip-box">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>
-          ${s.breakdownHindi ? `<div class="tip-box">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}`;
+          ${s.breakdownHindi ? html`<div class="tip-box">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}`;
         document.getElementById('sentence-controls').style.display = 'block';
         sentDone = true;
       } catch(e) {}
@@ -1975,7 +1966,7 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
     renderAll(lesson); // final authoritative render
   } catch(e) {
     ['word-body','sentence-body','roleplay-body'].forEach(id =>
-      document.getElementById(id).innerHTML = `<div class="error-state">⚠️ ${e.message}. Check your API key and refresh.</div>`
+      document.getElementById(id).innerHTML = html`<div class="error-state">⚠️ ${e.message}. Check your API key and refresh.</div>`
     );
   }
 }
@@ -1996,8 +1987,7 @@ function toggleAskPanel() {
 function setMainContentVisible(visible) {
   // Hide/show everything except the ask panel and header title
   const els = ['chrome-stats', 'panel-today', 'panel-revision', 'panel-archive',
-               'chrome-nav', 'chrome-reset', 'chrome-badge',
-               'focus-exit-btn'];
+               'chrome-nav', 'chrome-reset', 'chrome-badge'];
   els.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.visibility = visible ? '' : 'hidden';
@@ -2014,11 +2004,6 @@ document.addEventListener('click', function(e) {
     setMainContentVisible(true);
   }
 });
-
-function setAskQ(text) {
-  document.getElementById('ask-input').value = text;
-  document.getElementById('ask-input').focus();
-}
 
 async function submitAsk() {
   const input = document.getElementById('ask-input');
@@ -2054,23 +2039,25 @@ Student's question: "${q}"`;
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error?.message || `API error ${res.status}`);
-    const raw = data.content?.find(b => b.type === 'text')?.text;
-    if (!raw) throw new Error('No text in response');
+    const answer = data.content?.find(b => b.type === 'text')?.text;
+    if (!answer) throw new Error('No text in response');
 
-    // Format the response — highlight KN/ROM/ENG markers
-    const formatted = raw
+    // Escape first, then expand the KN/ROM/ENG markers into the only markup we
+    // intend to emit. The marker syntax survives escaping. `trusted` because the
+    // escaping is already done — passing the string plain would double-escape it.
+    const formatted = trusted(esc(answer)
       .replace(/\[KN:\s*(.*?)\]/g, '<span class="kn">$1</span>')
       .replace(/\[ROM:\s*(.*?)\]/g, '<span class="rom">$1</span>')
       .replace(/\[ENG:\s*(.*?)\]/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br>');
+      .replace(/\n/g, '<br>'));
 
-    area.innerHTML = `
+    area.innerHTML = html`
       <div class="ask-answer">
         <div class="ask-answer-head">💡 Answer</div>
         <div class="ask-answer-body">${formatted}</div>
       </div>`;
   } catch(e) {
-    area.innerHTML = `<div class="error-state">⚠️ ${e.message}</div>`;
+    area.innerHTML = html`<div class="error-state">⚠️ ${e.message}</div>`;
   }
 
   btn.disabled = false;
