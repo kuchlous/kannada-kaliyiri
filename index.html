@@ -47,7 +47,10 @@
 <!-- Fixed floating menu button — visible during lesson focus mode -->
 <button id="focus-menu-btn" onclick="goToMainMenu()">← Menu</button>
 
-<div class="app-wrapper">
+<!-- `booting` hides the app until initApp() has decided what to show. Removed
+     there. Without it the header, the zeroed stats and an empty panel paint
+     while /api/me and the state fetch are still in flight. -->
+<div class="app-wrapper booting">
 
 <header>
   <div class="header-ornament chrome-ui" id="chrome-ornament">✦ ✦ ✦</div>
@@ -135,7 +138,7 @@
   </div>
 
   <!-- Step indicator -->
-  <div class="step-indicator" id="step-indicator">
+  <div class="step-indicator" id="step-indicator" style="display:none">
     <div class="step-dot active" id="sdot-0" onclick="goStep(0)">
       <div class="dot">🌟</div>
       <div class="step-label">Word</div>
@@ -153,7 +156,9 @@
   </div>
 
   <!-- Step 0: Word -->
-  <div id="step-0" class="step-card">
+  <!-- The three step cards all start hidden: the resting state of this panel is
+       the welcome card. A visible #step-0 read as a lesson stuck loading. -->
+  <div id="step-0" class="step-card" style="display:none">
     <div class="step-card-header">
       <div class="step-icon s">🌟</div>
       <div class="step-meta">

@@ -33,6 +33,9 @@ export function initApp() {
   document.getElementById('step-indicator').style.display = 'none';
   document.getElementById('welcome-card').style.display = 'block';
   updateWelcomeBtn();
+  // Only now is the page showing the right thing — reveal it. Every path that
+  // makes the app usable ends here, including saveApiKey().
+  document.querySelector('.app-wrapper')?.classList.remove('booting');
 }
 
 export function resetApp() {
