@@ -1,11 +1,12 @@
 // Building and rendering a lesson. Claude writes the Kannada, Google Translate
-// supplies the English, then Claude breaks the sentence down from Google's
-// translation — see translateLesson/addBreakdown at the bottom of this file.
+// supplies the English, the two are cross-checked (verify.js), and then Claude
+// breaks the sentence down from Google's translation.
 import { html } from './escape.js';
 import { state, apiKey, setApiKey, saveState, TOPICS, TOPIC_TAGS, getPracticedWords, getWeekNum } from './state.js';
 import { showApiGate } from './gates.js';
 import { showToast, goStep, setFocusMode, updateStepIndicator, enterCompletionMode } from './ui.js';
 import { store } from './store.js';
+import { verifyLesson } from './verify.js';
 
 // ══════════════════════════════════════════════════════════════
 //  FETCH LESSON
@@ -28,6 +29,10 @@ export function renderWord(l) {
   const ti = TOPICS.indexOf(l.topic), tc = TOPIC_TAGS[Math.max(ti,0)];
   document.getElementById('word-topic').innerHTML = html`<span class="topic-tag tag-${tc}">${l.topic}</span>`;
   document.getElementById('word-body').innerHTML = html`
+    ${l.unverified ? html`<div class="error-state">⚠️ <strong>Unverified.</strong> Google's
+      translation of this Kannada disagrees with what it was meant to say
+      (${l.unverified}). Treat it with caution — it will not be saved to your
+      archive or revision deck.</div>` : ''}
     <div class="word-big">${w.kannada}</div>
     <div class="word-roman">${w.transliteration}</div>
     <div class="word-eng"><strong>${w.meaning}</strong> · ${w.partOfSpeech}</div>
@@ -137,6 +142,13 @@ export function repeatTodayLesson() {
 
 export function archiveToday() {
   if (!state.todayData) return;
+  // An unverified lesson must not enter the archive: the archive feeds the
+  // revision deck, the quizzes and the never-repeat list, so anything wrong
+  // that lands here is taught again indefinitely.
+  if (state.todayData.unverified) {
+    showToast('⚠️ Unverified lesson — not saved to your archive');
+    return;
+  }
   const sid = state.todayData.sessionId;
   // Archive EVERY completed session (daily lesson or dropdown-picked).
   // Dedupe only on the unique session id, so repeating the exact same loaded
@@ -281,7 +293,7 @@ Return ONLY valid JSON (no markdown):
   return lesson;
 }
 
-export async function fetchLessonWithTopic(forceTopic) {
+export async function fetchLessonWithTopic(forceTopic, attempt = 0) {
   // Re-read apiKey at call time in case it was just saved
   setApiKey(store.getItem('kk_apikey') || apiKey);
   if (!apiKey) {
@@ -301,8 +313,8 @@ export async function fetchLessonWithTopic(forceTopic) {
   // the model generated alongside it.
   const prompt = `You are a Kannada teacher for an absolute beginner (level ${state.level}/10, day ${state.day}). Topic: "${topic}".${avoidClause}
 Return ONLY valid JSON (no markdown):
-{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"..."},{"speaker":"YOU","kannada":"...","transliteration":"..."},{"speaker":"NPC","kannada":"...","transliteration":"..."},{"speaker":"YOU","kannada":"...","transliteration":"..."}]}}
-Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Do NOT include English translations of the Kannada — only the fields above. ONLY JSON.`;
+{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English","intent":"the English meaning you intend this Kannada to have"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","intent":"the English meaning you intend"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"..."}]}}
+Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Every "intent" is the English meaning you believe your Kannada carries. It is used to check your Kannada against an independent translation and is never shown to the learner, so state it plainly and accurately. ONLY JSON.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -384,6 +396,20 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
 
     const lesson = JSON.parse(text.replace(/```json|```/g,'').trim());
     await translateLesson(lesson);  // Google supplies every English meaning
+
+    // Cross-check Claude's Kannada against Google's independent reading of it.
+    // One retry, because a fresh sample usually fixes a one-off; a lesson that
+    // fails twice is shown with a warning and refused entry to the archive
+    // rather than being taught as if it were sound.
+    const check = await verifyLesson(lesson);
+    if (!check.ok) {
+      if (attempt === 0) {
+        showToast('⚠️ Translation check failed — regenerating…');
+        return fetchLessonWithTopic(forceTopic, attempt + 1);
+      }
+      lesson.unverified = check.mismatches.map(m => m.what).join(', ');
+    }
+
     await addBreakdown(lesson);     // Claude explains Google's translation
     lesson.sessionId = Date.now() + '-' + Math.floor(Math.random()*1e6);
     state.todayData = lesson;

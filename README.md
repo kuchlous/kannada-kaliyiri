@@ -29,7 +29,8 @@ No build step and no framework — the browser loads the source as written.
   | `ui.js` | Focus mode, step indicator, toasts, stats. |
   | `nav.js` | Moving between the three panels. |
   | `audio.js` | TTS playback and microphone capture. |
-  | `lesson.js` | Building and rendering a lesson — the three stages below. |
+  | `lesson.js` | Building and rendering a lesson — the four stages below. |
+  | `verify.js` | The round-trip check that Claude's Kannada means what it claims. |
   | `practice.js`, `revision.js`, `archive.js`, `ask.js` | The four feature panels. |
   | `auth.js`, `init.js` | Sign-in flow and the first render after it. |
   | `main.js` | Entry point. Boots the app and publishes the handler surface. |
@@ -45,11 +46,14 @@ No build step and no framework — the browser loads the source as written.
   - `api/translate.js` — authenticated proxy to the Google Cloud Translation API.
   - `api/tts.js` — authenticated proxy to Google Translate's Kannada text-to-speech.
 
-A lesson is built in three stages:
+A lesson is built in four stages:
 
-1. **Claude** (`claude-sonnet-5`, called from the browser with your own key) picks the word and writes all the Kannada — the word, its transliteration, the example sentence and the role-play. It is not asked for any English.
+1. **Claude** (`claude-sonnet-5`, called from the browser with your own key) picks the word and writes all the Kannada — the word, its transliteration, the example sentence and the role-play. Alongside each piece it states the English it *intended*, which is used only for the check in step 3 and is never shown.
 2. **Google Translate** renders every piece of that Kannada into English, in one batched call through `/api/translate`. The English a learner sees is therefore a real translation of the Kannada, not a second thing the model produced alongside it.
-3. **Claude** breaks the sentence down word by word, working from Google's translation, so the explanation always agrees with the English shown above it.
+3. **Round-trip check** (`js/verify.js`) compares Claude's declared intent against Google's independent reading. Where they clearly agree, nothing further happens; where they don't, a single batched call asks whether the two English phrasings mean the same thing, so a synonym isn't reported as an error. A lesson that fails is regenerated once, and if it fails again it is shown with a warning and **refused entry to the archive** — the archive feeds the revision deck, the quizzes and the never-repeat list, so anything wrong that lands there is taught indefinitely.
+4. **Claude** breaks the sentence down word by word, working from Google's translation, so the explanation always agrees with the English shown above it.
+
+Why this shape: Kannada is diglossic, and machine translation is trained mostly on written text, so English→Kannada yields correct but bookish output — poor for an app about speaking. Letting Claude write the Kannada keeps the colloquial register; the round-trip check is what stops that being blind trust. It does not catch Kannada that is correct but too formal, and both systems can still err the same way on a rare word.
 
 Stage 1 is streamed, so the word and sentence cards appear before the role-play finishes generating; the English fills in when stage 2 returns.
 
