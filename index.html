@@ -1905,6 +1905,60 @@ function loadWithTheme() {
   showToast(chosenTopic ? `📚 Loading lesson on: ${chosenTopic}` : '🎲 Loading a random lesson…');
 }
 
+// ── GOOGLE TRANSLATE ──
+// One batched call for the whole lesson: the word, the sentence and every
+// roleplay line. The key lives server-side in /api/translate — it is the
+// operator's key and billable, unlike the per-user Anthropic key.
+async function translateLesson(lesson) {
+  const lines = lesson.roleplay?.lines || [];
+  const segments = [lesson.word.kannada, lesson.sentence.kannada, ...lines.map(l => l.kannada)];
+
+  const res = await fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ q: segments, source: 'kn', target: 'en' })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Translation failed (${res.status})`);
+
+  const [wordEn, sentenceEn, ...lineEns] = data.translations;
+  lesson.word.meaning = wordEn;
+  lesson.sentence.meaning = sentenceEn;
+  lines.forEach((l, i) => { l.english = lineEns[i]; });
+  return lesson;
+}
+
+// Claude explains the sentence, working from Google's translation rather than
+// its own — so the breakdown always agrees with the English shown above it.
+async function addBreakdown(lesson) {
+  const s = lesson.sentence;
+  const prompt = `Kannada sentence: ${s.kannada}
+Transliteration: ${s.transliteration}
+English translation: ${s.meaning}
+
+Explain that sentence word by word for a beginner. The explanation MUST agree with the English translation given above — do not substitute your own translation.
+Return ONLY valid JSON (no markdown):
+{"breakdown":"word by word breakdown in English","breakdownHindi":"word by word breakdown in Hindi (Devanagari script)"}`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body: JSON.stringify({model:'claude-sonnet-5',max_tokens:1024,messages:[{role:'user',content:prompt}]})
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || `API error ${res.status}`);
+
+  const out = data.content?.find(b => b.type === 'text')?.text || '';
+  // The breakdown is a nicety — a lesson is still usable without it, so a
+  // malformed reply here must not throw away a lesson that is otherwise fine.
+  try {
+    const parsed = JSON.parse(out.replace(/```json|```/g,'').trim());
+    s.breakdown = parsed.breakdown;
+    s.breakdownHindi = parsed.breakdownHindi;
+  } catch(e) {}
+  return lesson;
+}
+
 async function fetchLessonWithTopic(forceTopic) {
   // Re-read apiKey at call time in case it was just saved
   apiKey = store.getItem('kk_apikey') || apiKey;
@@ -1919,10 +1973,14 @@ async function fetchLessonWithTopic(forceTopic) {
   const avoidClause = learned.length
     ? ` The learner has ALREADY learned these words, so the word of the day MUST be a brand-new word that is NOT in this list: ${learned.join('; ')}.`
     : '';
+  // Claude writes the Kannada and the teaching material; it is NOT asked for any
+  // English meanings. Those come from Google Translate below, so the English a
+  // learner sees is a real translation of the Kannada rather than a second thing
+  // the model generated alongside it.
   const prompt = `You are a Kannada teacher for an absolute beginner (level ${state.level}/10, day ${state.day}). Topic: "${topic}".${avoidClause}
 Return ONLY valid JSON (no markdown):
-{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","meaning":"English","partOfSpeech":"noun/verb/etc","example":"fun practical tip"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","meaning":"English translation","breakdown":"word by word breakdown in English","breakdownHindi":"word by word breakdown in Hindi (Devanagari script)"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","english":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","english":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","english":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","english":"..."}]}}
-Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. ONLY JSON.`;
+{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"..."},{"speaker":"YOU","kannada":"...","transliteration":"..."},{"speaker":"NPC","kannada":"...","transliteration":"..."},{"speaker":"YOU","kannada":"...","transliteration":"..."}]}}
+Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Do NOT include English translations of the Kannada — only the fields above. ONLY JSON.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1955,7 +2013,7 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
         document.getElementById('word-body').innerHTML = html`
           <div class="word-big">${w.kannada}</div>
           <div class="word-roman">${w.transliteration}</div>
-          <div class="word-eng"><strong>${w.meaning}</strong> · ${w.partOfSpeech}</div>
+          <div class="word-eng">${w.meaning ? html`<strong>${w.meaning}</strong> · ` : ''}${w.partOfSpeech}</div>
           ${w.example ? html`<div class="tip-box">💡 <strong>Tip:</strong> ${w.example}</div>` : ''}`;
         document.getElementById('word-controls').style.display = 'block';
         wordDone = true;
@@ -1974,9 +2032,9 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
           <div class="sent-block">
             <div class="sent-kn">${s.kannada}</div>
             <div class="sent-roman">${s.transliteration}</div>
-            <div class="sent-eng">${s.meaning}</div>
+            ${s.meaning ? html`<div class="sent-eng">${s.meaning}</div>` : ''}
           </div>
-          <div class="tip-box">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>
+          ${s.breakdown ? html`<div class="tip-box">🔍 <strong>Breakdown:</strong> ${s.breakdown}</div>` : ''}
           ${s.breakdownHindi ? html`<div class="tip-box">🔍 <strong>विवरण (Hindi):</strong> ${s.breakdownHindi}</div>` : ''}`;
         document.getElementById('sentence-controls').style.display = 'block';
         sentDone = true;
@@ -2003,6 +2061,8 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
     }
 
     const lesson = JSON.parse(text.replace(/```json|```/g,'').trim());
+    await translateLesson(lesson);  // Google supplies every English meaning
+    await addBreakdown(lesson);     // Claude explains Google's translation
     lesson.sessionId = Date.now() + '-' + Math.floor(Math.random()*1e6);
     state.todayData = lesson;
     saveState();
