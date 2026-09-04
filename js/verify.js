@@ -102,11 +102,14 @@ export async function verifyLesson(lesson) {
   // Politeness, compared in Hindi. Local and deterministic — no model call — so
   // it stands even when the judge below is unreachable. Lines where either side
   // drops the pronoun are skipped rather than guessed at.
-  const register = (lesson.roleplay?.lines || []).map((l, i) => {
-    const meant = hindiRegister(l.intent_hi), got = hindiRegister(l.hindi);
-    return (meant && got && meant !== got)
-      ? { what: `roleplay line ${i + 1} politeness`, claude: meant, google: got }
-      : null;
+  const register = [
+    { what: 'sentence politeness', src: lesson.sentence },
+    ...(lesson.roleplay?.lines || []).map((l, i) => (
+      { what: `roleplay line ${i + 1} politeness`, src: l }
+    )),
+  ].map(({ what, src }) => {
+    const meant = hindiRegister(src?.intent_hi), got = hindiRegister(src?.hindi);
+    return (meant && got && meant !== got) ? { what, claude: meant, google: got } : null;
   }).filter(Boolean);
 
   const uncertain = pairs.filter(p => similarity(p.claude, p.google) < CLEARLY_AGREE);

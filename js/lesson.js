@@ -259,23 +259,27 @@ export async function translateLesson(lesson) {
   lesson.sentence.meaning = sentenceEn;
   lines.forEach((l, i) => { l.english = lineEns[i]; });
 
-  // Hindi for the conversation lines. A second call because Cloud Translation
-  // takes one target language per request. Best-effort: the English is what the
-  // lesson cannot do without, so a Hindi failure leaves the bubbles without a
-  // Hindi row rather than failing the whole lesson.
-  if (lines.length) {
-    try {
-      const hi = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: lines.map(l => l.kannada), source: 'kn', target: 'hi' })
-      });
-      if (hi.ok) {
-        const { translations } = await hi.json();
-        lines.forEach((l, i) => { l.hindi = translations[i]; });
-      }
-    } catch (e) {}
-  }
+  // Hindi for the example sentence and the conversation lines. A second call
+  // because Cloud Translation takes one target language per request. The lines'
+  // Hindi is shown in the bubbles; the sentence's is not rendered — it exists so
+  // verify.js can check the sentence's level of address, which English cannot
+  // show. Best-effort either way: the English is what the lesson cannot do
+  // without, so a Hindi failure drops the Hindi row and the politeness check
+  // rather than failing the whole lesson.
+  try {
+    const hiSegments = [lesson.sentence.kannada, ...lines.map(l => l.kannada)];
+    const hi = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: hiSegments, source: 'kn', target: 'hi' })
+    });
+    if (hi.ok) {
+      const { translations } = await hi.json();
+      const [sentenceHi, ...lineHis] = translations;
+      lesson.sentence.hindi = sentenceHi;
+      lines.forEach((l, i) => { l.hindi = lineHis[i]; });
+    }
+  } catch (e) {}
   return lesson;
 }
 
@@ -339,8 +343,8 @@ export async function fetchLessonWithTopic(forceTopic, attempt = 0, pinnedWord =
     : '';
   const prompt = `You are a Kannada teacher for an absolute beginner (level ${state.level}/10, day ${state.day}). Topic: "${topic}".${avoidClause}${pinClause}
 Return ONLY valid JSON (no markdown):
-{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English","intent":"the English meaning you intend this Kannada to have"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","intent":"the English meaning you intend"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."}]}}
-Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Every "intent" is the English meaning you believe your Kannada carries. Every "intent_hi" is that same line in Hindi (Devanagari), using the level of address your Kannada actually uses: ನೀನು → तू or तुम, ನೀವು → आप. Keep it consistent within a line — if the Kannada says ನೀವು the Hindi must say आप. Both are used only to check your Kannada against an independent translation and are never shown to the learner, so state them plainly and accurately. ONLY JSON.`;
+{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English","intent":"the English meaning you intend this Kannada to have"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","intent":"the English meaning you intend","intent_hi":"the same sentence in Hindi"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."}]}}
+Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Every "intent" is the English meaning you believe your Kannada carries. Every "intent_hi" is that same Kannada in Hindi (Devanagari), using the level of address your Kannada actually uses: ನೀನು → तू or तुम, ನೀವು → आप. Keep it consistent — if the Kannada says ನೀವು the Hindi must say आप, and if the Kannada addresses nobody the Hindi must not add a pronoun. Both are used only to check your Kannada against an independent translation and are never shown to the learner, so state them plainly and accurately. ONLY JSON.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
