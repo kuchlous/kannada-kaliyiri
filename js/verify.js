@@ -14,6 +14,32 @@
 
 import { apiKey } from './state.js';
 
+// ── The Hindi channel ──
+// Kannada marks the level of address (ನೀನು / ನೀವು) and so does Hindi
+// (तू / तुम / आप); English does not. The English round-trip is therefore blind
+// to a politeness error — "did you eat?" reads identically either way, so a line
+// that is rude to a shopkeeper passes. Google's Kannada→Hindi rendering is not
+// blind to it, so comparing it against the Hindi Claude says it meant catches
+// the one class of mistake the English check structurally cannot see.
+//
+// ponytail: pronouns only. Hindi is pro-drop, so a line with no pronoun scores
+// null and is skipped rather than guessed at from verb endings, which are
+// ambiguous (हो is both the तुम present and a subjunctive). Add ending detection
+// if too many lines come back unknown.
+const REGISTER = {
+  formal:   ['आप','आपको','आपका','आपकी','आपके','आपसे','आपने'],
+  familiar: ['तुम','तुम्हें','तुमको','तुम्हारा','तुम्हारी','तुम्हारे','तुमसे','तुमने'],
+  informal: ['तू','तुझे','तुझको','तेरा','तेरी','तेरे','तुझसे','तूने'],
+};
+
+// 'formal' | 'familiar' | 'informal' | null (no second-person pronoun present).
+export function hindiRegister(s) {
+  const words = new Set(String(s ?? '').split(/[^ऀ-ॿ]+/).filter(Boolean));
+  for (const level of Object.keys(REGISTER))
+    if (REGISTER[level].some(m => words.has(m))) return level;
+  return null;
+}
+
 const STOP = new Set(['a','an','the','is','am','are','was','were','i','you','he','she','it','we','they',
   'to','of','in','on','at','for','with','my','your','his','her','their','do','does','did','have','has',
   'had','will','would','and','or','that','this','be','been','me','him','them','us','from','as','so']);
@@ -73,16 +99,26 @@ export async function verifyLesson(lesson) {
     )),
   ].filter(p => p.claude && p.google);
 
+  // Politeness, compared in Hindi. Local and deterministic — no model call — so
+  // it stands even when the judge below is unreachable. Lines where either side
+  // drops the pronoun are skipped rather than guessed at.
+  const register = (lesson.roleplay?.lines || []).map((l, i) => {
+    const meant = hindiRegister(l.intent_hi), got = hindiRegister(l.hindi);
+    return (meant && got && meant !== got)
+      ? { what: `roleplay line ${i + 1} politeness`, claude: meant, google: got }
+      : null;
+  }).filter(Boolean);
+
   const uncertain = pairs.filter(p => similarity(p.claude, p.google) < CLEARLY_AGREE);
-  if (!uncertain.length) return { ok: true, checked: true, mismatches: [] };
+  if (!uncertain.length) return { ok: !register.length, checked: true, mismatches: register };
 
   let verdicts;
   try {
     verdicts = await judge(uncertain);
   } catch (e) {
-    return { ok: true, checked: false, mismatches: [] };
+    return { ok: !register.length, checked: false, mismatches: register };
   }
 
-  const mismatches = uncertain.filter((_, i) => verdicts[i] === false);
+  const mismatches = [...uncertain.filter((_, i) => verdicts[i] === false), ...register];
   return { ok: mismatches.length === 0, checked: true, mismatches };
 }

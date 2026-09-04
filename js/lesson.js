@@ -339,8 +339,8 @@ export async function fetchLessonWithTopic(forceTopic, attempt = 0, pinnedWord =
     : '';
   const prompt = `You are a Kannada teacher for an absolute beginner (level ${state.level}/10, day ${state.day}). Topic: "${topic}".${avoidClause}${pinClause}
 Return ONLY valid JSON (no markdown):
-{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English","intent":"the English meaning you intend this Kannada to have"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","intent":"the English meaning you intend"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"..."}]}}
-Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Every "intent" is the English meaning you believe your Kannada carries. It is used to check your Kannada against an independent translation and is never shown to the learner, so state it plainly and accurately. ONLY JSON.`;
+{"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English","intent":"the English meaning you intend this Kannada to have"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","intent":"the English meaning you intend"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"...","intent_hi":"..."}]}}
+Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Every "intent" is the English meaning you believe your Kannada carries. Every "intent_hi" is that same line in Hindi (Devanagari), using the level of address your Kannada actually uses: ನೀನು → तू or तुम, ನೀವು → आप. Keep it consistent within a line — if the Kannada says ನೀವು the Hindi must say आप. Both are used only to check your Kannada against an independent translation and are never shown to the learner, so state them plainly and accurately. ONLY JSON.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -442,7 +442,7 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
           showToast('⚠️ Word didn\'t check out — trying a different word…');
           return fetchLessonWithTopic(forceTopic, attempt + 1, null);
         }
-        showToast('⚠️ Sentence didn\'t check out — rewriting it for the same word…');
+        showToast('⚠️ Didn\'t check out — rewriting it for the same word…');
         return fetchLessonWithTopic(forceTopic, attempt + 1, lesson.word);
       }
       lesson.unverified = check.mismatches.map(m => m.what).join(', ');
