@@ -110,6 +110,18 @@ export function completeStep(key, stepIdx) {
   }
 }
 
+// Returns the three step buttons to their untouched state. Shared by every
+// path that starts a lesson over: a new day, a repeat, a topic change, and a
+// verification retry that had to change the word.
+function resetStepButtons() {
+  ['cbtn-word','cbtn-sentence','cbtn-roleplay'].forEach((id,i) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.className = 'complete-btn todo';
+    btn.textContent = i < 2 ? '✓ Mark Complete & Continue →' : '✓ Mark Complete — Lesson Done! 🎉';
+  });
+}
+
 function markBtnDone(id, label) {
   const btn = document.getElementById(id);
   if (!btn) return;
@@ -127,12 +139,7 @@ export function repeatTodayLesson() {
   document.getElementById('step-indicator').style.display = '';
   setFocusMode(true);
   // Reset button states
-  ['cbtn-word','cbtn-sentence','cbtn-roleplay'].forEach((id,i) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.className = 'complete-btn todo';
-    btn.textContent = i < 2 ? '✓ Mark Complete & Continue →' : '✓ Mark Complete — Lesson Done! 🎉';
-  });
+  resetStepButtons();
   ['rec-panel-word','rec-panel-sentence','rec-panel-roleplay'].forEach(id =>
     document.getElementById(id).innerHTML = ''
   );
@@ -185,11 +192,7 @@ export function loadNewDay() {
   ['word-controls','sentence-controls','roleplay-controls'].forEach(id =>
     document.getElementById(id).style.display = 'none'
   );
-  ['cbtn-word','cbtn-sentence','cbtn-roleplay'].forEach((id,i) => {
-    const btn = document.getElementById(id);
-    btn.className = 'complete-btn todo';
-    btn.textContent = i < 2 ? '✓ Mark Complete & Continue →' : '✓ Mark Complete — Lesson Done! 🎉';
-  });
+  resetStepButtons();
   ['rec-panel-word','rec-panel-sentence','rec-panel-roleplay'].forEach(id =>
     document.getElementById(id).innerHTML = ''
   );
@@ -224,12 +227,7 @@ export function loadWithTheme() {
   ['word-controls','sentence-controls','roleplay-controls'].forEach(id =>
     document.getElementById(id).style.display = 'none'
   );
-  ['cbtn-word','cbtn-sentence','cbtn-roleplay'].forEach((id,i) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.className = 'complete-btn todo';
-    btn.textContent = i < 2 ? '✓ Mark Complete & Continue →' : '✓ Mark Complete — Lesson Done! 🎉';
-  });
+  resetStepButtons();
   ['rec-panel-word','rec-panel-sentence','rec-panel-roleplay'].forEach(id =>
     document.getElementById(id).innerHTML = ''
   );
@@ -312,7 +310,11 @@ Return ONLY valid JSON (no markdown):
   return lesson;
 }
 
-export async function fetchLessonWithTopic(forceTopic, attempt = 0) {
+// `pinnedWord` keeps the word of the day fixed across a retry. When only the
+// sentence or the role-play failed verification, the word itself was fine and
+// the learner is already looking at it — replacing it would swap the lesson out
+// from under them and leave a sentence that never uses the word they were shown.
+export async function fetchLessonWithTopic(forceTopic, attempt = 0, pinnedWord = null) {
   // Re-read apiKey at call time in case it was just saved
   setApiKey(store.getItem('kk_apikey') || apiKey);
   if (!apiKey) {
@@ -330,7 +332,12 @@ export async function fetchLessonWithTopic(forceTopic, attempt = 0) {
   // English meanings. Those come from Google Translate below, so the English a
   // learner sees is a real translation of the Kannada rather than a second thing
   // the model generated alongside it.
-  const prompt = `You are a Kannada teacher for an absolute beginner (level ${state.level}/10, day ${state.day}). Topic: "${topic}".${avoidClause}
+  // A pinned word overrides the avoid-list: it is not in the archive yet, so
+  // there is no conflict, but the instruction must be unambiguous about which wins.
+  const pinClause = pinnedWord
+    ? ` The word of the day MUST be exactly "${pinnedWord.kannada}" (${pinnedWord.meaning}) — do not choose a different word. Write a NEW example sentence and a NEW role-play around that same word, and make sure both actually use it.`
+    : '';
+  const prompt = `You are a Kannada teacher for an absolute beginner (level ${state.level}/10, day ${state.day}). Topic: "${topic}".${avoidClause}${pinClause}
 Return ONLY valid JSON (no markdown):
 {"topic":"${topic}","word":{"kannada":"script","transliteration":"syllable-hyphenated e.g. na-ma-ste","partOfSpeech":"noun/verb/etc","example":"fun practical tip in English","intent":"the English meaning you intend this Kannada to have"},"sentence":{"kannada":"simple sentence using the word","transliteration":"syllable-hyphenated","intent":"the English meaning you intend"},"roleplay":{"scenario":"Short scenario title e.g. At the market","npcName":"e.g. Shopkeeper","lines":[{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"NPC","kannada":"...","transliteration":"...","intent":"..."},{"speaker":"YOU","kannada":"...","transliteration":"...","intent":"..."}]}}
 Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the day must be NEW — never one of the already-learned words listed above. Roleplay must use today's word. Every "intent" is the English meaning you believe your Kannada carries. It is used to check your Kannada against an independent translation and is never shown to the learner, so state it plainly and accurately. ONLY JSON.`;
@@ -423,8 +430,20 @@ Rules: level 1-3 = very basic vocab. Everyday Bangalore Kannada. The word of the
     const check = await verifyLesson(lesson);
     if (!check.ok) {
       if (attempt === 0) {
-        showToast('⚠️ Translation check failed — regenerating…');
-        return fetchLessonWithTopic(forceTopic, attempt + 1);
+        // Only a bad WORD justifies changing the word. Anything else is retried
+        // around the same word, so the learner keeps the one they were shown.
+        const wordFailed = check.mismatches.some(m => m.what === 'word');
+        if (wordFailed) {
+          // The word is about to change, so any step already ticked off refers
+          // to material the learner will never see. Start the lesson over.
+          state.done = { word:false, sentence:false, roleplay:false };
+          resetStepButtons();
+          updateStepIndicator();
+          showToast('⚠️ Word didn\'t check out — trying a different word…');
+          return fetchLessonWithTopic(forceTopic, attempt + 1, null);
+        }
+        showToast('⚠️ Sentence didn\'t check out — rewriting it for the same word…');
+        return fetchLessonWithTopic(forceTopic, attempt + 1, lesson.word);
       }
       lesson.unverified = check.mismatches.map(m => m.what).join(', ');
     }
