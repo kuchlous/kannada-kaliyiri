@@ -6,7 +6,7 @@ A web app for learning Kannada through AI-generated daily lessons. Each lesson w
 
 - **Daily lessons** — new words with Kannada script, romanization, English meaning, and usage tips
 - **Example sentences** — see each word used in context, with an English and Hindi breakdown
-- **Role-play** — short conversational scenarios to practice, including a turn-by-turn practice mode
+- **Role-play** — short conversational scenarios to practice, each line shown in Kannada, romanization, English and Hindi, plus a turn-by-turn practice mode
 - **Pronunciation** — hear any word or sentence spoken, and record yourself to compare
 - **Revision quizzes** — flashcards and multiple-choice quizzes over everything you've practiced
 - **Archive** — browse past lessons, grouped by week
@@ -49,7 +49,7 @@ No build step and no framework — the browser loads the source as written.
 A lesson is built in four stages:
 
 1. **Claude** (`claude-sonnet-5`, called from the browser with your own key) picks the word and writes all the Kannada — the word, its transliteration, the example sentence and the role-play. Alongside each piece it states the English it *intended*, which is used only for the check in step 3 and is never shown.
-2. **Google Translate** renders every piece of that Kannada into English, in one batched call through `/api/translate`. The English a learner sees is therefore a real translation of the Kannada, not a second thing the model produced alongside it.
+2. **Google Translate** renders every piece of that Kannada into English, in one batched call through `/api/translate`, plus a second call giving the role-play lines a Hindi rendering. The English a learner sees is therefore a real translation of the Kannada, not a second thing the model produced alongside it. Hindi is best-effort — if that call fails the conversation simply shows no Hindi row.
 3. **Round-trip check** (`js/verify.js`) compares Claude's declared intent against Google's independent reading. Where they clearly agree, nothing further happens; where they don't, a single batched call asks whether the two English phrasings mean the same thing, so a synonym isn't reported as an error. A lesson that fails is regenerated once, and if it fails again it is shown with a warning and **refused entry to the archive** — the archive feeds the revision deck, the quizzes and the never-repeat list, so anything wrong that lands there is taught indefinitely.
 4. **Claude** breaks the sentence down word by word, working from Google's translation, so the explanation always agrees with the English shown above it.
 

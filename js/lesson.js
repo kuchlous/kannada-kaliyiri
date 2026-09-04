@@ -65,6 +65,7 @@ export function roleplayBubbles(r) {
           <div class="bubble-kn">${line.kannada}</div>
           <div class="bubble-roman">${line.transliteration}</div>
           <div class="bubble-eng">${line.english}</div>
+          ${line.hindi ? html`<div class="bubble-hindi">${line.hindi}</div>` : ''}
         </div>
       </div>
     </div>`;
@@ -259,6 +260,24 @@ export async function translateLesson(lesson) {
   lesson.word.meaning = wordEn;
   lesson.sentence.meaning = sentenceEn;
   lines.forEach((l, i) => { l.english = lineEns[i]; });
+
+  // Hindi for the conversation lines. A second call because Cloud Translation
+  // takes one target language per request. Best-effort: the English is what the
+  // lesson cannot do without, so a Hindi failure leaves the bubbles without a
+  // Hindi row rather than failing the whole lesson.
+  if (lines.length) {
+    try {
+      const hi = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: lines.map(l => l.kannada), source: 'kn', target: 'hi' })
+      });
+      if (hi.ok) {
+        const { translations } = await hi.json();
+        lines.forEach((l, i) => { l.hindi = translations[i]; });
+      }
+    } catch (e) {}
+  }
   return lesson;
 }
 

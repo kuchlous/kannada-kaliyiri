@@ -108,6 +108,7 @@ header p{color:var(--text-light);font-size:.85rem;letter-spacing:1.5px;text-tran
 .bubble-kn{font-size:1.05rem;color:var(--terracotta);font-weight:600;}
 .bubble-roman{font-style:italic;color:var(--mud-light);font-size:.76rem;margin-top:2px;}
 .bubble-eng{color:var(--text-mid);font-size:.77rem;margin-top:1px;}
+.bubble-hindi{color:var(--mud);font-size:.8rem;margin-top:3px;padding-top:3px;border-top:1px solid rgba(201,180,138,.4);}
 
 /* ── NAVIGATION ── */
 .card-nav{display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:10px;}
