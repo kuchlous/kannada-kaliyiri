@@ -14,7 +14,30 @@ A web app for learning Kannada through AI-generated daily lessons. Each lesson w
 
 ## Architecture
 
-- `index.html` — the entire frontend: markup, styles, and logic in one file, no build step and no framework.
+No build step and no framework — the browser loads the source as written.
+
+- `index.html` — markup only.
+- `css/styles.css` — all styles.
+- `js/` — ES modules, loaded via `<script type="module" src="/js/main.js">`. Roughly in dependency order:
+
+  | Module | Responsibility |
+  |---|---|
+  | `escape.js` | The `html` tagged template that escapes every interpolation, plus `trusted`/`attrJson` for the deliberate exceptions. |
+  | `store.js` | The server-backed key/value cache: hydrate, debounced push, flush on unload. |
+  | `state.js` | The persisted state object and the history helpers derived from it. |
+  | `gates.js` | The sign-in and API-key overlays. Dependency-free, so `init.js` and `auth.js` can both use it. |
+  | `ui.js` | Focus mode, step indicator, toasts, stats. |
+  | `nav.js` | Moving between the three panels. |
+  | `audio.js` | TTS playback and microphone capture. |
+  | `lesson.js` | Building and rendering a lesson — the three stages below. |
+  | `practice.js`, `revision.js`, `archive.js`, `ask.js` | The four feature panels. |
+  | `auth.js`, `init.js` | Sign-in flow and the first render after it. |
+  | `main.js` | Entry point. Boots the app and publishes the handler surface. |
+
+  Modules have no shared global scope, so an inline `onclick="goStep(1)"` cannot see an imported binding — it resolves against `window`. Rather than rewrite every handler, `main.js` assigns the functions the markup names to `window` in one explicit block. **That list is the app's public surface: if a name is not in it, no HTML attribute may call it.**
+
+  `js/package.json` marks the directory as ES modules for Node, so the modules can be imported by tests as-is. Browsers ignore it.
+
 - `api/` — Vercel serverless functions:
   - `api/auth/signup.js`, `login.js`, `logout.js` — email/password accounts. Passwords are hashed with bcrypt and stored in Vercel KV; the session is a JWT in an `HttpOnly` cookie.
   - `api/me.js` — returns the current session, or 401.
